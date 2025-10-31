@@ -3,6 +3,11 @@ from fastapi import FastAPI, UploadFile, File, Form, HTTPException
 from fastapi.responses import JSONResponse
 from pathlib import Path
 import pandas as pd
+from typing import Optional, Literal, Dict, Any, List
+from pydantic import BaseModel
+import math
+import json
+import glob
 from pandas.api.types import (
     is_bool_dtype,
     is_object_dtype,
@@ -113,6 +118,17 @@ def label_peek(s: pd.Series, top_k: int = 10):
     vc = s.astype("string").value_counts(dropna=True).head(top_k)
     return [{"label": k, "count": int(v)} for k, v in vc.items()]
 
+def find_dataset_path(dataset_id: str) -> Path:
+    """
+    Resolve saved CSV path from dataset_id. We saved as:
+      uploads/<dataset_id>__<original>.csv
+    This finds the matching file safely without needing a DB (for now).
+    """
+    pattern = str(UPLOAD_DIR / f"{dataset_id}__*.csv")
+    matches = glob.glob(pattern)
+    if not matches:
+        raise HTTPException(status_code=404, detail="dataset_id not found")
+    return Path(matches[0])
 
 @app.post("/datasets")
 async def upload_and_analyze_dataset(
@@ -192,3 +208,7 @@ async def upload_and_analyze_dataset(
             resp["suggested_algorithms"] = []
 
     return JSONResponse(resp, status_code=201)
+
+
+
+
