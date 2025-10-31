@@ -1,0 +1,883 @@
+[
+  {
+    "id": "1",
+    "question": "What is a Decision Tree in machine learning?",
+    "answer": "A Decision Tree is a supervised learning algorithm that splits data into branches based on feature values to make decisions. Each internal node represents a test on an attribute, each branch represents an outcome, and each leaf node represents a predicted class or value."
+  },
+  {
+    "id": "2",
+    "question": "How does a Decision Tree make predictions?",
+    "answer": "A Decision Tree makes predictions by following a path from the root to a leaf node based on feature conditions. At each node, it checks a rule (e.g., 'Age < 30'), follows the corresponding branch, and finally outputs the value at the leaf node."
+  },
+  {
+    "id": "3",
+    "question": "Why was 'Outlook' chosen as the root feature?",
+    "answer": "'Outlook' was chosen as the root feature because it had the highest Information Gain (0.24675). That means it provided the most significant reduction in entropy, making it the best feature to split the data at the root level."
+  },
+  {
+    "id": "4",
+    "question": "What does H(S) = 0.940286 mean?",
+    "answer": "H(S) = 0.940286 represents the entropy of the entire dataset before any splits. It measures the uncertainty or impurity of the class labels — here, a mix of 'Yes' and 'No' outcomes."
+  },
+  {
+    "id": "5",
+    "question": "Why is entropy used to measure impurity?",
+    "answer": "Entropy quantifies disorder in the data. The more mixed the classes, the higher the entropy. Decision Trees use it to decide where to split the data for maximum purity gain."
+  },
+  {
+    "id": "6",
+    "question": "What does Gain(S, A) represent?",
+    "answer": "Gain(S, A) represents the Information Gain when the dataset S is split using feature A. It measures how much uncertainty about the target variable is reduced by knowing the feature value."
+  },
+  {
+    "id": "7",
+    "question": "Why is Information Gain highest for Outlook?",
+    "answer": "The feature 'Outlook' creates splits that produce the purest subsets compared to others. Its weighted average entropy after splitting is lowest, giving the highest gain of 0.24675."
+  },
+  {
+    "id": "8",
+    "question": "What do the probabilities p(c) = Yes=0.6429 and No=0.3571 mean?",
+    "answer": "They represent the proportion of samples belonging to each class in the dataset. Here, 64.29% are 'Yes' and 35.71% are 'No'."
+  },
+  {
+    "id": "9",
+    "question": "What does |Sᵥ| = 4 mean in this context?",
+    "answer": "|Sᵥ| = 4 means that for that particular feature value (like 'Overcast'), there are 4 samples in the dataset belonging to that subset."
+  },
+  {
+    "id": "10",
+    "question": "Why is H(Sᵥ) = 0 for Overcast?",
+    "answer": "Because all samples under 'Overcast' have the same class label ('Yes'), there is no uncertainty. Hence, the entropy is 0, indicating perfect purity."
+  },
+  {
+    "id": "11",
+    "question": "Why are entropy values like 0.970951 not exactly 1?",
+    "answer": "Entropy reaches 1 only when the classes are perfectly balanced (50-50). Values like 0.970951 occur when there's a slight imbalance in class proportions."
+  },
+  {
+    "id": "12",
+    "question": "Why is Temperature's Information Gain so low?",
+    "answer": "Temperature has a low Information Gain (0.029223) because its splits don't significantly reduce the overall entropy. The resulting subsets remain fairly mixed between 'Yes' and 'No'."
+  },
+  {
+    "id": "13",
+    "question": "What does 'Σ weight·H(Sᵥ)' mean?",
+    "answer": "It represents the weighted average of entropies across all subsets created by a feature. Each subset's entropy is weighted by the proportion of samples it contains."
+  },
+  {
+    "id": "14",
+    "question": "Why does the system choose the feature with the highest Information Gain?",
+    "answer": "Choosing the feature with the highest Information Gain ensures that each split maximally reduces uncertainty about the target variable, leading to a simpler and more accurate tree."
+  },
+  {
+    "id": "15",
+    "question": "What does it mean when Gain(S, A) = 0?",
+    "answer": "If Gain(S, A) = 0, splitting on that feature doesn't reduce entropy at all — meaning the feature provides no information about the target variable."
+  },
+  {
+    "id": "16",
+    "question": "Why does Windy have lower gain compared to Outlook?",
+    "answer": "Because splitting by 'Windy' results in subsets that are still quite mixed, its weighted entropy remains high. Therefore, its Information Gain (0.048127) is smaller."
+  },
+  {
+    "id": "17",
+    "question": "What is the meaning of 'Chosen root: Outlook'?",
+    "answer": "It indicates that the Decision Tree algorithm selected 'Outlook' as the first split (root node) because it gives the best improvement in prediction purity."
+  },
+  {
+    "id": "18",
+    "question": "What does the notation H(Sᵥ) signify?",
+    "answer": "H(Sᵥ) denotes the entropy of a subset Sᵥ — the portion of the dataset corresponding to a particular value of the feature being tested."
+  },
+  {
+    "id": "19",
+    "question": "Why does the entropy formula include a negative sign?",
+    "answer": "The negative sign ensures that entropy values are non-negative because log(p) is negative when p < 1. It keeps entropy as a positive measure of uncertainty."
+  },
+  {
+    "id": "20",
+    "question": "Why might Humidity still have a decent gain (0.151836)?",
+    "answer": "Humidity provides a reasonable split between 'Yes' and 'No' classes. The subsets it creates are somewhat purer than others, resulting in moderate Information Gain."
+  },
+  {
+    "id": "21",
+    "question": "What is the purpose of calculating entropy and gain for every feature?",
+    "answer": "By comparing entropy and Information Gain for each feature, the Decision Tree algorithm determines which feature best separates the data at each step."
+  },
+  {
+    "id": "22",
+    "question": "What does N = 14 indicate?",
+    "answer": "N = 14 means there are 14 samples in the dataset being used to build the Decision Tree. It's the total number of training instances at the root node."
+  },
+  {
+    "id": "23",
+    "question": "What are the main types of Decision Trees?",
+    "answer": "The two main types of Decision Trees are Classification Trees and Regression Trees. Classification Trees predict categorical outcomes, while Regression Trees predict continuous numeric values."
+  },
+  {
+    "id": "24",
+    "question": "What criterion is used to measure the quality of a split in a Decision Tree?",
+    "answer": "The quality of a split is measured using impurity metrics such as Gini impurity, entropy (information gain), or variance reduction. The goal is to create branches that increase homogeneity within nodes."
+  },
+  {
+    "id": "25",
+    "question": "What is Gini impurity?",
+    "answer": "Gini impurity measures how often a randomly chosen element would be incorrectly labeled if it was randomly labeled according to the distribution of labels in the node. It is calculated as 1 - Σ(p_i²), where p_i is the probability of class i."
+  },
+  {
+    "id": "26",
+    "question": "What is Entropy in Decision Trees?",
+    "answer": "Entropy is a measure of disorder or impurity in a dataset. It quantifies the uncertainty in predicting the class of a randomly chosen instance. A node with only one class has an entropy of 0, meaning no uncertainty."
+  },
+  {
+    "id": "27",
+    "question": "How does Information Gain relate to Decision Trees?",
+    "answer": "Information Gain measures the reduction in entropy after a dataset is split on an attribute. It helps choose the attribute that provides the most significant improvement in purity for the resulting nodes."
+  },
+  {
+    "id": "28",
+    "question": "Why is recursive partitioning important in Decision Trees?",
+    "answer": "Recursive partitioning is the process of repeatedly splitting the dataset into subsets based on the best features until a stopping condition is met. It allows the model to capture complex, hierarchical relationships between variables."
+  },
+  {
+    "id": "29",
+    "question": "What are leaf nodes in a Decision Tree?",
+    "answer": "Leaf nodes are the terminal points of a Decision Tree where a final prediction is made. Each leaf node represents a specific output value or class label based on the conditions along the path from the root."
+  },
+  {
+    "id": "30",
+    "question": "What does overfitting mean in the context of Decision Trees?",
+    "answer": "Overfitting occurs when a Decision Tree learns patterns specific to the training data, including noise, resulting in poor generalization to unseen data. It typically happens when the tree grows too deep without pruning."
+  },
+  {
+    "id": "31",
+    "question": "What is pruning in Decision Trees?",
+    "answer": "Pruning is the process of reducing the size of a Decision Tree by removing branches that provide little predictive power. It helps prevent overfitting and improves generalization."
+  },
+  {
+    "id": "32",
+    "question": "What is the role of the 'max_depth' parameter?",
+    "answer": "The 'max_depth' parameter limits the number of levels in a Decision Tree. Controlling depth helps prevent overfitting and keeps the model interpretable."
+  },
+  {
+    "id": "33",
+    "question": "How does 'min_samples_split' affect a Decision Tree?",
+    "answer": "The 'min_samples_split' parameter defines the minimum number of samples required to split an internal node. A higher value leads to a simpler tree with fewer splits."
+  },
+  {
+    "id": "34",
+    "question": "What is 'min_samples_leaf' used for?",
+    "answer": "The 'min_samples_leaf' parameter ensures that each leaf node has at least a minimum number of samples, which prevents the model from creating overly specific rules."
+  },
+  {
+    "id": "35",
+    "question": "What is the significance of the 'criterion' parameter?",
+    "answer": "The 'criterion' parameter determines the function used to measure the quality of a split. Common values are 'gini' and 'entropy' for classification, and 'squared_error' for regression."
+  },
+  {
+    "id": "36",
+    "question": "How does a Decision Tree handle continuous and categorical variables?",
+    "answer": "Continuous variables are split based on threshold values, while categorical variables are split based on subsets of categories. Scikit-learn mainly supports numerical splits."
+  },
+  {
+    "id": "37",
+    "question": "What is feature importance in Decision Trees?",
+    "answer": "Feature importance indicates how much each feature contributes to reducing impurity in the model. It is computed as the total reduction in impurity brought by that feature across all splits."
+  },
+  {
+    "id": "38",
+    "question": "Why do Decision Trees not require feature scaling?",
+    "answer": "Decision Trees are based on threshold-based splits, not distances or gradients. Therefore, they are unaffected by differences in feature scales."
+  },
+  {
+    "id": "39",
+    "question": "How can Decision Trees be visualized in scikit-learn?",
+    "answer": "You can visualize Decision Trees using 'plot_tree' or 'export_graphviz' functions from scikit-learn. These show feature names, thresholds, and predicted values at each node."
+  },
+  {
+    "id": "40",
+    "question": "What are the advantages of Decision Trees?",
+    "answer": "Decision Trees are easy to interpret, handle both numerical and categorical data, require little preprocessing, and can model nonlinear relationships."
+  },
+  {
+    "id": "41",
+    "question": "What are the disadvantages of Decision Trees?",
+    "answer": "Decision Trees are prone to overfitting, can be unstable with small data changes, and may prefer features with more categories if not regularized."
+  },
+  {
+    "id": "42",
+    "question": "What is variance reduction in regression trees?",
+    "answer": "Variance reduction measures how much the variability of target values decreases after a split. It's the regression equivalent of impurity reduction."
+  },
+  {
+    "id": "43",
+    "question": "How do Decision Trees handle missing values?",
+    "answer": "Scikit-learn's DecisionTreeClassifier and DecisionTreeRegressor do not handle missing values directly. You must impute or remove missing data before training."
+  },
+  {
+    "id": "44",
+    "question": "What does 'random_state' control in Decision Trees?",
+    "answer": "The 'random_state' parameter ensures reproducibility by controlling random number generation used during training, especially for tie-breaking in splits."
+  },
+  {
+    "id": "45",
+    "question": "Why are Decision Trees considered non-parametric models?",
+    "answer": "Decision Trees do not assume any fixed functional form or parameters about the data distribution. They adapt to the data structure itself."
+  },
+  {
+    "id": "46",
+    "question": "How does a Decision Tree differ from a linear model?",
+    "answer": "A linear model fits a straight decision boundary, while a Decision Tree creates piecewise constant regions that can approximate nonlinear relationships."
+  },
+  {
+    "id": "47",
+    "question": "What is the role of impurity-based feature selection?",
+    "answer": "Impurity-based feature selection ranks features according to how much they reduce impurity in a Decision Tree, helping identify the most informative predictors."
+  },
+  {
+    "id": "48",
+    "question": "How do you prevent overfitting in Decision Trees?",
+    "answer": "You can prevent overfitting by using parameters like 'max_depth', 'min_samples_split', 'min_samples_leaf', or by applying post-pruning techniques."
+  },
+  {
+    "id": "49",
+    "question": "What is a decision boundary in the context of Decision Trees?",
+    "answer": "A decision boundary is the surface that separates different classes in feature space. Decision Trees create axis-aligned, step-like boundaries."
+  },
+  {
+    "id": "50",
+    "question": "What is the difference between pre-pruning and post-pruning?",
+    "answer": "Pre-pruning limits the tree's growth using constraints like max depth during training. Post-pruning trims branches after the full tree is built."
+  },
+  {
+    "id": "51",
+    "question": "Why can small changes in data affect Decision Trees?",
+    "answer": "Decision Trees are sensitive to small variations because a slight data change can alter the best split points, leading to different structures."
+  },
+  {
+    "id": "52",
+    "question": "What is the computational complexity of Decision Tree training?",
+    "answer": "Training complexity is O(n * m * log(n)) where n is the number of samples and m is the number of features, assuming efficient sorting and splitting."
+  },
+  {
+    "id": "53",
+    "question": "How does scikit-learn optimize Decision Tree splits?",
+    "answer": "Scikit-learn uses an efficient algorithm that sorts feature values once per feature and then computes potential split gains in linear time."
+  },
+  {
+    "id": "54",
+    "question": "Can Decision Trees be used for multi-output tasks?",
+    "answer": "Yes, Decision Trees in scikit-learn support multi-output regression and classification, predicting multiple targets simultaneously."
+  },
+  {
+    "id": "55",
+    "question": "What is a regression tree?",
+    "answer": "A regression tree predicts continuous numeric outcomes by minimizing variance within each node after splits, rather than impurity."
+  },
+  {
+    "id": "56",
+    "question": "How does a Decision Tree handle correlated features?",
+    "answer": "When features are correlated, the tree may arbitrarily choose one over another for splitting, which can lead to unstable interpretations."
+  },
+  {
+    "id": "57",
+    "question": "What does 'max_features' control?",
+    "answer": "The 'max_features' parameter limits the number of features to consider when searching for the best split, helping regularize the tree."
+  },
+  {
+    "id": "58",
+    "question": "What is the difference between DecisionTreeClassifier and DecisionTreeRegressor?",
+    "answer": "DecisionTreeClassifier is used for categorical target variables, while DecisionTreeRegressor handles continuous targets using variance reduction."
+  },
+  {
+    "id": "59",
+    "question": "How can Decision Trees be evaluated?",
+    "answer": "They can be evaluated using accuracy, precision, recall, F1-score for classification, or mean squared error for regression tasks."
+  },
+  {
+    "id": "60",
+    "question": "What is 'ccp_alpha' used for in scikit-learn?",
+    "answer": "The 'ccp_alpha' parameter controls minimal cost-complexity pruning, removing subtrees that provide minimal performance improvement."
+  },
+  {
+    "id": "61",
+    "question": "How does cost-complexity pruning work?",
+    "answer": "It adds a penalty proportional to the number of leaves, balancing model complexity and accuracy to prevent overfitting."
+  },
+  {
+    "id": "62",
+    "question": "What is the meaning of impurity decrease in scikit-learn trees?",
+    "answer": "Impurity decrease measures how much impurity (Gini or entropy) reduces when a node is split, guiding the choice of best splits."
+  },
+  {
+    "id": "63",
+    "question": "How can you extract decision rules from a trained tree?",
+    "answer": "You can use the 'export_text' function to view decision rules in human-readable form, showing thresholds and outcomes."
+  },
+  {
+    "id": "64",
+    "question": "What is a limitation of axis-aligned splits in Decision Trees?",
+    "answer": "Axis-aligned splits cannot capture oblique decision boundaries unless combined with ensembles like Random Forests."
+  },
+  {
+    "id": "65",
+    "question": "How can Decision Trees handle imbalanced data?",
+    "answer": "You can use the 'class_weight' parameter to assign higher weights to minority classes during training."
+  },
+  {
+    "id": "66",
+    "question": "Why are ensemble methods often built on Decision Trees?",
+    "answer": "Decision Trees serve as base learners for ensembles like Random Forests and Gradient Boosted Trees because they capture nonlinearity effectively."
+  },
+  {
+    "id": "67",
+    "question": "What are surrogate splits?",
+    "answer": "Surrogate splits are backup splits used in some implementations to handle missing values when the primary split feature is unavailable."
+  },
+  {
+    "id": "68",
+    "question": "What visualization helps interpret Decision Trees?",
+    "answer": "A tree diagram or feature importance bar plot can help understand model logic and key decision paths."
+  },
+  {
+    "id": "69",
+    "question": "Why might a shallow tree underfit?",
+    "answer": "A shallow tree may fail to capture complex relationships, leading to high bias and poor performance on both training and test data."
+  },
+  {
+    "id": "70",
+    "question": "How do Decision Trees relate to human decision-making?",
+    "answer": "They mimic human reasoning by following step-by-step rules to reach conclusions, making them intuitive to interpret."
+  },
+  {
+    "id": "71",
+    "question": "What is the stopping condition for tree growth?",
+    "answer": "Common stopping conditions include reaching max depth, minimum impurity decrease, or too few samples to continue splitting."
+  },
+  {
+    "id": "72",
+    "question": "What is the role of 'min_impurity_decrease'?",
+    "answer": "It sets a threshold for the minimum impurity reduction required to perform a split, controlling model complexity."
+  },
+  {
+    "id": "73",
+    "question": "How does scikit-learn handle ties in best split selection?",
+    "answer": "When multiple splits yield equal gain, scikit-learn breaks ties deterministically using feature and threshold order."
+  },
+  {
+    "id": "74",
+    "question": "How can Decision Trees contribute to interpretability in AI?",
+    "answer": "They provide transparent, rule-based structures that can be directly examined and explained to stakeholders."
+  },
+  {
+    "id": "75",
+    "question": "Why are Decision Trees prone to high variance?",
+    "answer": "Small changes in training data can lead to different split points, making Decision Trees unstable compared to ensemble methods."
+  },
+  {
+    "id": "76",
+    "question": "When should you prefer Decision Trees over linear models?",
+    "answer": "When relationships between variables are nonlinear or involve complex conditional interactions, Decision Trees perform better."
+  },
+  {
+    "id": "77",
+    "question": "What is the Naive Bayes algorithm?",
+    "answer": "Naive Bayes is a family of probabilistic classifiers based on Bayes' theorem with strong independence assumptions between features."
+  },
+  {
+    "id": "78",
+    "question": "Which Naive Bayes classifiers are implemented in scikit-learn?",
+    "answer": "Scikit-learn provides GaussianNB, MultinomialNB, ComplementNB, BernoulliNB, and CategoricalNB."
+  },
+  {
+    "id": "79",
+    "question": "What is Bayes' theorem?",
+    "answer": "Bayes' theorem is P(y|x) = P(x|y) * P(y) / P(x), describing the probability of a class given the features."
+  },
+  {
+    "id": "80",
+    "question": "What assumption does Naive Bayes make about features?",
+    "answer": "It assumes that features are conditionally independent given the class label."
+  },
+  {
+    "id": "81",
+    "question": "What is GaussianNB used for?",
+    "answer": "GaussianNB is used when features are continuous and assumed to follow a normal distribution."
+  },
+  {
+    "id": "82",
+    "question": "What is MultinomialNB used for?",
+    "answer": "MultinomialNB is used for discrete features such as term frequencies in text classification."
+  },
+  {
+    "id": "83",
+    "question": "What is ComplementNB?",
+    "answer": "ComplementNB is an adaptation of MultinomialNB designed for imbalanced datasets."
+  },
+  {
+    "id": "84",
+    "question": "When should BernoulliNB be used?",
+    "answer": "BernoulliNB should be used for binary or boolean features indicating presence or absence."
+  },
+  {
+    "id": "85",
+    "question": "What is CategoricalNB?",
+    "answer": "CategoricalNB is used for categorical features with discrete levels rather than counts."
+  },
+  {
+    "id": "86",
+    "question": "What is the purpose of Laplace smoothing in Naive Bayes?",
+    "answer": "Laplace smoothing prevents zero probabilities by adding a small value to frequency counts."
+  },
+  {
+    "id": "87",
+    "question": "What parameter controls smoothing in scikit-learn Naive Bayes models?",
+    "answer": "The parameter 'alpha' controls additive smoothing in MultinomialNB and ComplementNB."
+  },
+  {
+    "id": "88",
+    "question": "What method is used for incremental learning in Naive Bayes?",
+    "answer": "The 'partial_fit' method allows Naive Bayes classifiers to support incremental learning on batches."
+  },
+  {
+    "id": "89",
+    "question": "Which Naive Bayes models in scikit-learn support partial_fit?",
+    "answer": "GaussianNB, MultinomialNB, BernoulliNB, and ComplementNB support partial_fit."
+  },
+  {
+    "id": "90",
+    "question": "Why use partial_fit in Naive Bayes?",
+    "answer": "It enables training on large datasets in batches without loading all data into memory."
+  },
+  {
+    "id": "91",
+    "question": "What attribute stores class prior probabilities?",
+    "answer": "The attribute 'class_prior_' stores prior probabilities of each class."
+  },
+  {
+    "id": "92",
+    "question": "How are class priors estimated in Naive Bayes?",
+    "answer": "If not provided, class priors are estimated from the training data frequencies."
+  },
+  {
+    "id": "93",
+    "question": "What is the formula for posterior probability in Naive Bayes?",
+    "answer": "Posterior = (Likelihood × Prior) / Evidence."
+  },
+  {
+    "id": "94",
+    "question": "What does the method predict_proba() return?",
+    "answer": "It returns the posterior probability of each class for given samples."
+  },
+  {
+    "id": "95",
+    "question": "What does predict_log_proba() return?",
+    "answer": "It returns the logarithm of class probabilities, which is numerically more stable."
+  },
+  {
+    "id": "96",
+    "question": "Why is Naive Bayes called 'naive'?",
+    "answer": "Because it assumes all features are independent given the class label, which is rarely true in practice."
+  },
+  {
+    "id": "97",
+    "question": "What kind of tasks is Naive Bayes suited for?",
+    "answer": "It is commonly used for classification tasks such as spam detection and text categorization."
+  },
+  {
+    "id": "98",
+    "question": "Why is Naive Bayes efficient?",
+    "answer": "It requires only simple counts and probability computations, making it computationally fast."
+  },
+  {
+    "id": "99",
+    "question": "What data type does MultinomialNB expect?",
+    "answer": "It expects non-negative feature counts such as word frequencies."
+  },
+  {
+    "id": "100",
+    "question": "What is the 'fit' method used for in Naive Bayes?",
+    "answer": "The fit method trains the model by estimating parameters from the training data."
+  },
+  {
+    "id": "101",
+    "question": "What is the role of 'var_smoothing' in GaussianNB?",
+    "answer": "The 'var_smoothing' parameter adds a small constant to variances for numerical stability."
+  },
+  {
+    "id": "102",
+    "question": "Can GaussianNB handle missing values?",
+    "answer": "Yes, GaussianNB can handle missing values by ignoring them during likelihood computation."
+  },
+  {
+    "id": "103",
+    "question": "Why is ComplementNB more robust than MultinomialNB?",
+    "answer": "ComplementNB uses statistics from the complement of each class, reducing bias in imbalanced data."
+  },
+  {
+    "id": "104",
+    "question": "What attribute stores the learned class labels?",
+    "answer": "The 'classes_' attribute stores all class labels known to the classifier."
+  },
+  {
+    "id": "105",
+    "question": "What is the difference between predict and predict_proba?",
+    "answer": "predict gives the class with the highest probability, while predict_proba returns probabilities for all classes."
+  },
+  {
+    "id": "106",
+    "question": "Which Naive Bayes classifier works best for text classification?",
+    "answer": "MultinomialNB is generally preferred for text classification with word frequency features."
+  },
+  {
+    "id": "107",
+    "question": "What type of distribution does GaussianNB assume?",
+    "answer": "It assumes each feature follows a Gaussian (normal) distribution within each class."
+  },
+  {
+    "id": "108",
+    "question": "How does scikit-learn store feature statistics in Naive Bayes?",
+    "answer": "Each model stores per-class statistics like feature means, variances, or counts depending on type."
+  },
+  {
+    "id": "109",
+    "question": "Can Naive Bayes be used for continuous data?",
+    "answer": "Yes, GaussianNB handles continuous data effectively."
+  },
+  {
+    "id": "110",
+    "question": "What is the output of the score() method?",
+    "answer": "The score() method returns the mean accuracy on the given test data and labels."
+  },
+  {
+    "id": "111",
+    "question": "What is incremental learning?",
+    "answer": "Incremental learning is training a model using data batches instead of the full dataset at once."
+  },
+  {
+    "id": "112",
+    "question": "Why is Naive Bayes a good baseline model?",
+    "answer": "It is simple, fast, and performs well on many real-world datasets."
+  },
+  {
+    "id": "113",
+    "question": "Does Naive Bayes work with negative feature values?",
+    "answer": "No, MultinomialNB and ComplementNB require non-negative features, while GaussianNB can handle negatives."
+  },
+  {
+    "id": "114",
+    "question": "What happens if a feature has zero probability for a class?",
+    "answer": "Without smoothing, the class probability becomes zero; smoothing fixes this issue."
+  },
+  {
+    "id": "115",
+    "question": "Which Naive Bayes model is suitable for categorical variables?",
+    "answer": "CategoricalNB is designed specifically for categorical features."
+  },
+  {
+    "id": "116",
+    "question": "How are probabilities stored in MultinomialNB?",
+    "answer": "They are stored in the 'feature_log_prob_' attribute as log probabilities for each feature per class."
+  },
+  {
+    "id": "117",
+    "question": "What does the attribute 'class_count_' represent?",
+    "answer": "It represents the number of training samples observed in each class."
+  },
+  {
+    "id": "118",
+    "question": "What is the computational complexity of Naive Bayes?",
+    "answer": "It is linear in the number of features and samples, O(n_features × n_samples)."
+  },
+  {
+    "id": "119",
+    "question": "Is Naive Bayes a discriminative or generative model?",
+    "answer": "Naive Bayes is a generative model since it models the joint probability P(x, y)."
+  },
+  {
+    "id": "120",
+    "question": "Can Naive Bayes handle online learning?",
+    "answer": "Yes, through the partial_fit method that updates the model incrementally."
+  },
+  
+{
+"id": "1",
+"question": "What type of problems can Naive Bayes struggle with?",
+"answer": "It struggles when feature independence assumptions are heavily violated."
+},
+{
+"id": "2",
+"question": "How can you evaluate a Naive Bayes classifier?",
+"answer": "By using metrics such as accuracy, precision, recall, and F1-score."
+},
+{
+"id": "3",
+"question": "What is the main advantage of Naive Bayes for text data?",
+"answer": "It performs well even with high-dimensional sparse text features."
+},
+{
+"id": "4",
+"question": "Which Naive Bayes variant is least affected by class imbalance?",
+"answer": "ComplementNB is more robust to class imbalance than MultinomialNB."
+},
+{
+"id": "5",
+"question": "What does Naive Bayes output when predicting unseen data?",
+"answer": "It outputs the most probable class label based on learned feature likelihoods."
+},
+{
+"id": "6",
+"question": "Can Naive Bayes be combined with other models?",
+"answer": "Yes, it is often used in ensembles and as a baseline comparison in pipelines."
+},
+{
+"id": "7",
+"question": "What is Regression?",
+"answer": "Regression is a statistical modeling technique that estimates the relationship between one or more predictor variables and a response variable."
+},
+{
+"id": "8",
+"question": "What are the common types of regression?",
+"answer": "The main types of regression include Linear Regression, Logistic Regression, Survival Analysis, and Nonlinear Regression."
+},
+{
+"id": "9",
+"question": "What is Linear Regression?",
+"answer": "Linear regression predicts the value of a numeric response variable using one or more predictor variables, assuming a linear relationship between them."
+},
+{
+"id": "10",
+"question": "Why is the least squares method used in regression?",
+"answer": "The least squares method minimizes the squared difference between observed and predicted values, ensuring the best-fit line represents the data as accurately as possible."
+},
+{
+"id": "11",
+"question": "What are predictor and response variables in regression?",
+"answer": "Predictor variables (independent variables) are used to make predictions, while the response variable (dependent variable) is the output being predicted."
+},
+{
+"id": "12",
+"question": "What is the purpose of regression analysis?",
+"answer": "Regression analysis helps understand relationships between variables and predict future outcomes based on existing data."
+},
+{
+"id": "13",
+"question": "What are the assumptions of Linear Regression?",
+"answer": "Key assumptions include linearity, independence, homoscedasticity, normality of residuals, and no multicollinearity among predictors."
+},
+{
+"id": "14",
+"question": "What is Homoscedasticity in Linear Regression?",
+"answer": "Homoscedasticity means that the residuals have constant variance across all levels of the independent variable."
+},
+{
+"id": "15",
+"question": "What is the formula for a best-fit line in Linear Regression?",
+"answer": "The formula is y = mx + b, where m is the slope and b is the intercept."
+},
+{
+"id": "16",
+"question": "Why is Linear Regression considered a supervised learning algorithm?",
+"answer": "Because it learns from labeled data to predict continuous numerical outcomes."
+},
+{
+"id": "17",
+"question": "What is Simple Linear Regression?",
+"answer": "Simple Linear Regression involves one independent variable and one dependent variable with a linear relationship."
+},
+{
+"id": "18",
+"question": "What is Multiple Linear Regression?",
+"answer": "Multiple Linear Regression uses two or more independent variables to predict a single dependent variable."
+},
+{
+"id": "19",
+"question": "What are the advantages of Linear Regression?",
+"answer": "It is simple, interpretable, computationally efficient, and widely used for predictive modeling."
+},
+{
+"id": "20",
+"question": "What is Multicollinearity in regression?",
+"answer": "Multicollinearity occurs when predictor variables are highly correlated, which can distort coefficient estimates."
+},
+{
+"id": "21",
+"question": "What does the slope represent in a regression line?",
+"answer": "The slope represents the change in the dependent variable for a one-unit change in the independent variable."
+},
+{
+"id": "22",
+"question": "What does the intercept represent in Linear Regression?",
+"answer": "The intercept represents the predicted value of the dependent variable when all independent variables are zero."
+},
+{
+"id": "23",
+"question": "What is the cost function in Linear Regression?",
+"answer": "The cost function measures the difference between predicted and actual values, often using Mean Squared Error (MSE)."
+},
+{
+"id": "24",
+"question": "What is Mean Squared Error (MSE)?",
+"answer": "MSE is the average of the squared differences between predicted and actual values."
+},
+{
+"id": "25",
+"question": "Why do we minimize MSE in Linear Regression?",
+"answer": "Minimizing MSE ensures that the regression line fits the data as closely as possible."
+},
+{
+"id": "26",
+"question": "What is Gradient Descent in regression?",
+"answer": "Gradient Descent is an optimization algorithm that updates model parameters iteratively to minimize the cost function."
+},
+{
+"id": "27",
+"question": "Why is Gradient Descent important in regression?",
+"answer": "It helps find the optimal parameters of the regression line by minimizing the loss function."
+},
+{
+"id": "28",
+"question": "What is the role of residuals in regression?",
+"answer": "Residuals represent the difference between actual and predicted values and indicate model accuracy."
+},
+{
+"id": "29",
+"question": "What is the normality assumption in Linear Regression?",
+"answer": "It assumes that residuals follow a normal distribution."
+},
+{
+"id": "30",
+"question": "Why is Linear Regression sensitive to outliers?",
+"answer": "Outliers can disproportionately affect the slope and intercept, distorting the regression line."
+},
+{
+"id": "31",
+"question": "What is Extrapolation in regression?",
+"answer": "Extrapolation means making predictions beyond the range of observed data, which can be unreliable."
+},
+{
+"id": "32",
+"question": "What is the difference between Simple and Multiple Regression?",
+"answer": "Simple regression uses one predictor, while multiple regression uses two or more predictors to estimate the dependent variable."
+},
+{
+"id": "33",
+"question": "What are some limitations of Linear Regression?",
+"answer": "It assumes linearity, is sensitive to outliers, and struggles with multicollinearity and non-linear relationships."
+},
+{
+"id": "34",
+"question": "What is the equation for Multiple Linear Regression?",
+"answer": "The equation is y = β₀ + β₁x₁ + β₂x₂ + ... + βₖxₖ."
+},
+{
+"id": "35",
+"question": "Why is Linear Regression widely used in machine learning?",
+"answer": "It is simple, interpretable, efficient, and serves as a foundation for many advanced algorithms."
+},
+{
+"id": "36",
+"question": "What is the difference between Linear and Nonlinear Regression?",
+"answer": "Linear regression assumes a straight-line relationship, while nonlinear regression models curved relationships between variables."
+},
+{
+"id": "37",
+"question": "What is R-squared in regression?",
+"answer": "R-squared measures the proportion of variance in the dependent variable explained by the independent variables."
+},
+{
+"id": "38",
+"question": "Why is data normalization important in regression?",
+"answer": "Normalization ensures that all features contribute equally to the model, improving stability and convergence."
+},
+{
+"id": "39",
+"question": "What is the main goal of regression analysis?",
+"answer": "The main goal is to model and predict relationships between variables."
+},
+{
+"id": "40",
+"question": "What is a residual plot used for?",
+"answer": "A residual plot helps check assumptions like linearity and homoscedasticity in regression models."
+},
+{
+"id": "41",
+"question": "Why should we avoid extrapolation in regression?",
+"answer": "Because the model may not hold outside the observed data range, leading to inaccurate predictions."
+},
+{
+"id": "42",
+"question": "What does model interpretability mean in regression?",
+"answer": "It refers to how easily we can understand the relationship between inputs and outputs in the model."
+},
+{
+"id": "43",
+"question": "What are regression coefficients?",
+"answer": "They are numerical values (slopes and intercepts) that represent the relationship strength and direction between variables."
+},
+{
+"id": "44",
+"question": "Why is the intercept important in Linear Regression?",
+"answer": "It represents the baseline value of the dependent variable when all predictors are zero."
+},
+{
+"id":"45",
+"question": "What is a scatter plot used for in regression?",
+"answer": "It visually shows the relationship between independent and dependent variables and helps assess linearity."
+},
+{
+"id": "46",
+"question": "Why is a representative sample important for regression?",
+"answer": "A representative sample ensures the model generalizes well to the target population."
+},
+{
+"id": "47",
+"question": "What is the difference between dependent and independent variables?",
+"answer": "Dependent variables are the outcomes predicted by independent variables, which are the predictors."
+},
+{
+"id": "48",
+"question": "How can we check for multicollinearity?",
+"answer": "By calculating the Variance Inflation Factor (VIF) or correlation matrix among predictors."
+},
+{
+"id": "49",
+"question": "What is the importance of sample size in regression?",
+"answer": "A larger sample size increases statistical power and reliability of regression estimates."
+},
+{
+"id": "50",
+"question": "Why are residuals important in evaluating a model?",
+"answer": "They show how well the model’s predictions match actual observations."
+},
+{
+"id": "51",
+"question": "What is the objective of Linear Regression training?",
+"answer": "To minimize the loss function by adjusting model parameters for the best fit line."
+},
+{
+"id": "52",
+"question": "Why is Linear Regression computationally efficient?",
+"answer": "It involves simple mathematical operations and can be solved analytically using matrix algebra."
+},
+{
+"id": "53",
+"question": "What is the difference between training and testing data in regression?",
+"answer": "Training data is used to fit the model, while testing data evaluates its predictive performance."
+},
+{
+"id": "54",
+"question": "What does the term 'best-fit line' mean?",
+"answer": "It is the line that minimizes the sum of squared differences between observed and predicted values."
+},
+{
+"id": "55",
+"question": "Why is regression analysis important in real-world problems?",
+"answer": "It helps in forecasting, decision-making, and understanding how factors influence outcomes."
+},
+{
+"id": "56",
+"question": "What are some applications of Linear Regression?",
+"answer": "Applications include predicting house prices, estimating sales, and modeling medical outcomes."
+}
+]
