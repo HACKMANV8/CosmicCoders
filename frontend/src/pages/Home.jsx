@@ -87,22 +87,32 @@ function Home() {
 
   const handleAlgorithmSelect = async (algo) => {
     try {
-      // Send selected algorithm + dataset_id to backend
-      const res = await fetch("http://localhost:8000/select_algorithm", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          dataset_id: datasetId,
-          algorithm: algo,
-        }),
-      });
+      const res = await fetch("http://localhost:8000/calculation", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({
+    dataset_id: datasetId,           
+    algorithm: algo,                 
+    params: algo === "id3"
+      ? {
+          target: "Play",           
+          features: ["Outlook","Temp","Humidity","Wind"]
+        }
+      : algo === "naive_bayes"
+      ? {
+          target: "Play",
+          example: { Outlook: "Sunny", Temp: "Cool", Humidity: "High", Wind: true }
+        }
+      : {}
+  }),
+});
+
 
       if (!res.ok) {
         throw new Error("Failed to send algorithm selection to backend");
       }
 
       console.log(`Algorithm ${algo} sent to backend successfully`);
-      // Redirect user to the respective algorithm page
       navigate(`/algorithms/${algo}`);
     } catch (error) {
       setError(error.message);
