@@ -8,6 +8,18 @@ import pandas as pd
 from fastapi import HTTPException
 import json
 import os
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import OneHotEncoder, StandardScaler, FunctionTransformer
+from sklearn.compose import ColumnTransformer
+from sklearn.pipeline import Pipeline
+from sklearn.metrics import accuracy_score, r2_score, mean_squared_error
+from sklearn.neighbors import KNeighborsClassifier, KNeighborsRegressor
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.linear_model import LogisticRegression, LinearRegression
+from sklearn.naive_bayes import MultinomialNB
+from sklearn.svm import SVR
+import numpy as np
+
 import uuid
 import shutil
 import io
@@ -80,6 +92,113 @@ def find_dataset_path(dataset_id: str) -> Path:
     if not matches:
         raise HTTPException(status_code=404, detail="dataset_id not found")
     return Path(matches[0])
+def _build_preprocessor(df: pd.DataFrame, target: str):
+    features = [c for c in df.columns if c != target]
+    X = df[features].copy()
+
+    # Identify column types
+    numeric_cols = X.select_dtypes(include=[np.number]).columns.tolist()
+    categorical_cols = [c for c in features if c not in numeric_cols]
+
+    # Preprocess: scale numerics, one-hot categoricals
+    pre = ColumnTransformer(
+        transformers=[
+            ("num", StandardScaler(), numeric_cols),
+            ("cat", OneHotEncoder(handle_unknown="ignore"), categorical_cols),
+        ],
+        remainder="drop",
+        sparse_threshold=1.0,  # keep sparse if any OHE
+    )
+
+    # Make sure final matrix is dense so KNN/SVR work
+    to_dense = FunctionTransformer(lambda m: m.toarray() if hasattr(m, "toarray") else m)
+
+    return pre, to_dense, features, numeric_cols, categorical_cols
+
+
+def _evaluate_classification(df: pd.DataFrame, target: str):
+    pre, to_dense, features, *_ = _build_preprocessor(df, target)
+    X = df[features]
+    y = df[target]
+
+    # Train/test split (stratify when possible)
+    stratify = y if y.nunique() > 1 and y.value_counts().min() >= 2 else None
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=0.2, random_state=42, stratify=stratify
+    )
+
+    models = {
+        "decision_tree": DecisionTreeClassifier(criterion="entropy", random_state=42),
+        "naive_bayes": MultinomialNB(),         # works well with OHE counts
+        "knn": KNeighborsClassifier(n_neighbors=5),
+        # (Optional) "logistic_regression": LogisticRegression(max_iter=1000),
+    }
+
+    results = []
+    for key, clf in models.items():
+        pipe = Pipeline(steps=[
+            ("pre", pre),
+            ("dense", to_dense),
+            ("model", clf),
+        ])
+        pipe.fit(X_train, y_train)
+        acc = accuracy_score(y_test, pipe.predict(X_test))
+        results.append({
+            "algorithm": key,
+            "metrics": {
+                "accuracy": float(acc),
+                "accuracy_percentage": float(acc * 100.0),
+                "samples_test": int(len(y_test)),
+            }
+        })
+
+    # pick best by accuracy
+    best = max(results, key=lambda r: r["metrics"]["accuracy"])
+    return results, best["algorithm"]
+
+
+def _evaluate_regression(df: pd.DataFrame, target: str):
+    pre, to_dense, features, *_ = _build_preprocessor(df, target)
+    X = df[features]
+    y = df[target]
+
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=0.2, random_state=42
+    )
+
+    models = {
+        "linear_regression": LinearRegression(),
+        "knn_regression": KNeighborsRegressor(n_neighbors=5),
+        "support vector regression": SVR(kernel="rbf", C=1.0, epsilon=0.1),
+    }
+
+    results = []
+    for key, reg in models.items():
+        pipe = Pipeline(steps=[
+            ("pre", pre),
+            ("dense", to_dense),
+            ("model", reg),
+        ])
+        pipe.fit(X_train, y_train)
+        y_pred = pipe.predict(X_test)
+
+        r2 = r2_score(y_test, y_pred)
+        rmse = float(np.sqrt(mean_squared_error(y_test, y_pred)))
+
+        results.append({
+            "algorithm": key,
+            "metrics": {
+                "r2": float(r2),
+                "rmse": rmse,
+                # For UI badge; this is R²-as-% (clearly label in frontend text if needed)
+                "accuracy_percentage": float(max(-100.0, min(100.0, r2 * 100.0))),
+                "samples_test": int(len(y_test)),
+            }
+        })
+
+    # pick best by r2
+    best = max(results, key=lambda r: r["metrics"]["r2"])
+    return results, best["algorithm"]
 
 def infer_target_type(s: pd.Series, max_class_count: int = 20, max_unique_ratio: float = 0.05):
     n = len(s)
