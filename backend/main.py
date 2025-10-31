@@ -7,7 +7,7 @@ from typing import Optional, Literal, Dict, Any, List, Mapping
 from pydantic import BaseModel
 from pathlib import Path
 import io
-
+from id3 import compute_id3_root_steps
 import math
 import csv
 import pandas as pd
@@ -310,11 +310,7 @@ async def calculate(req: CalcRequest):
         features = params.get("features")
         if not target:
             raise HTTPException(status_code=400, detail="params.target is required for ID3")
-        result = compute_id3_root_steps(df, target=target, features=features)
-    elif req.algorithm == "naive_bayes":
-        result = run_naive_bayes(df, params)
-    elif req.algorithm == "linear_regression":
-        result = run_linear_regression(df, params)
+        out = compute_id3_root_steps(df, target=target, features=features)
     else:
         raise HTTPException(status_code=400, detail="Unsupported algorithm")
 
