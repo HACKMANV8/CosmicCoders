@@ -14,11 +14,28 @@ const Card = ({ children, className = "" }) => (
 const DecisionTreeVisualization = ({ result, currentStep, isInStep = false }) => {
   const [hoveredNode, setHoveredNode] = useState(null);
   const [selectedNode, setSelectedNode] = useState(null);
+  const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
   const svgRef = useRef(null);
 
   if (!result?.steps) {
     return null;
   }
+
+  // Handle mouse move to update tooltip position
+  const handleMouseMove = (event, node) => {
+    if (svgRef.current) {
+      const rect = svgRef.current.getBoundingClientRect();
+      const svgPoint = svgRef.current.createSVGPoint();
+      svgPoint.x = event.clientX - rect.left;
+      svgPoint.y = event.clientY - rect.top;
+      
+      setTooltipPosition({ 
+        x: svgPoint.x, 
+        y: svgPoint.y 
+      });
+    }
+    setHoveredNode(node);
+  };
 
   // Build tree structure from steps
   const buildTreeStructure = () => {
@@ -129,7 +146,7 @@ const DecisionTreeVisualization = ({ result, currentStep, isInStep = false }) =>
         </h2>
       )}
       <div className="bg-white rounded-xl p-2 border border-gray-200 shadow-inner h-full">
-        <div className="w-full h-full min-h-[400px]">
+        <div className="w-full h-full min-h-[400px] relative">
           <svg 
             ref={svgRef}
             viewBox="0 0 800 350" 
@@ -188,7 +205,8 @@ const DecisionTreeVisualization = ({ result, currentStep, isInStep = false }) =>
             {nodes.map((node, idx) => (
               <g 
                 key={`node-${idx}`}
-                onMouseEnter={() => setHoveredNode(node)}
+                onMouseEnter={(e) => handleMouseMove(e, node)}
+                onMouseMove={(e) => handleMouseMove(e, node)}
                 onMouseLeave={() => setHoveredNode(null)}
                 onClick={() => setSelectedNode(selectedNode?.id === node.id ? null : node)}
                 className="cursor-pointer"
@@ -245,50 +263,117 @@ const DecisionTreeVisualization = ({ result, currentStep, isInStep = false }) =>
               </g>
             ))}
           </svg>
-        </div>
 
-        {/* Node Details Panel */}
-        {(hoveredNode || selectedNode) && (
-          <div className="mt-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <h4 className="font-semibold text-gray-800 mb-2">
-                  {(hoveredNode || selectedNode).type === "leaf" ? "Leaf Node" : "Split Node"}
-                </h4>
-                <div className="text-sm text-gray-600 space-y-1">
-                  <div><strong>Label:</strong> {(hoveredNode || selectedNode).label}</div>
-                  {(hoveredNode || selectedNode).value && (
-                    <div><strong>Value:</strong> {(hoveredNode || selectedNode).value}</div>
+          {/* Floating Tooltip */}
+          {hoveredNode && (
+            <div 
+              className="absolute pointer-events-none z-50 transition-all duration-200 ease-out"
+              style={{
+                left: `${tooltipPosition.x + 15}px`,
+                top: `${tooltipPosition.y - 10}px`,
+                transform: 'translateY(-100%)',
+              }}
+            >
+              <div className="bg-gray-900/95 backdrop-blur-sm text-white rounded-xl p-4 shadow-2xl border border-white/10 min-w-[200px] max-w-[280px]">
+                {/* Tooltip Arrow */}
+                <div className="absolute top-full left-4 w-0 h-0 border-l-[6px] border-r-[6px] border-t-[8px] border-l-transparent border-r-transparent border-t-gray-900/95"></div>
+                
+                {/* Node Type Badge */}
+                <div className="flex items-center gap-2 mb-3">
+                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                    hoveredNode.type === 'leaf' 
+                      ? 'bg-green-500/20 text-green-300 border border-green-500/30' 
+                      : 'bg-blue-500/20 text-blue-300 border border-blue-500/30'
+                  }`}>
+                    {hoveredNode.type === 'leaf' ? '🍃 Leaf Node' : '🔀 Split Node'}
+                  </span>
+                  {hoveredNode.level > 0 && (
+                    <span className="text-xs text-gray-400">Level {hoveredNode.level}</span>
                   )}
-                  <div><strong>Samples:</strong> {(hoveredNode || selectedNode).info.samples || '—'}</div>
                 </div>
-              </div>
-              <div>
-                <h4 className="font-semibold text-gray-800 mb-2">Statistics</h4>
-                <div className="text-sm text-gray-600 space-y-1">
-                  {(hoveredNode || selectedNode).info.entropy !== undefined && (
-                    <div><strong>Entropy:</strong> {round((hoveredNode || selectedNode).info.entropy, 3)}</div>
+
+                {/* Node Label */}
+                <div className="mb-3">
+                  <div className="text-sm text-gray-300 mb-1">
+                    {hoveredNode.type === 'leaf' ? 'Classification' : 'Feature'}
+                  </div>
+                  <div className="font-semibold text-lg text-white truncate">
+                    {hoveredNode.label}
+                  </div>
+                  {hoveredNode.value && (
+                    <div className="text-sm text-blue-300 mt-1">
+                      Value: <span className="font-mono">{hoveredNode.value}</span>
+                    </div>
                   )}
-                  {(hoveredNode || selectedNode).info.gain && (
-                    <div><strong>Gain:</strong> {round((hoveredNode || selectedNode).info.gain, 3)}</div>
+                </div>
+
+                {/* Statistics */}
+                <div className="space-y-2 text-sm">
+                  {hoveredNode.info.samples && (
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-300">Samples:</span>
+                      <span className="font-mono text-white font-medium">{hoveredNode.info.samples}</span>
+                    </div>
                   )}
-                  {(hoveredNode || selectedNode).info.classes && (
-                    <div>
-                      <strong>Classes:</strong>
-                      <div className="mt-1 flex flex-wrap gap-1">
-                        {Object.entries((hoveredNode || selectedNode).info.classes).map(([cls, count]) => (
-                          <span key={cls} className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">
-                            {cls}: {count}
-                          </span>
-                        ))}
+                  
+                  {hoveredNode.info.entropy !== undefined && (
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-300">Entropy:</span>
+                      <span className="font-mono text-white font-medium">{round(hoveredNode.info.entropy, 3)}</span>
+                    </div>
+                  )}
+                  
+                  {hoveredNode.info.gain && (
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-300">Info Gain:</span>
+                      <span className="font-mono text-green-300 font-medium">{round(hoveredNode.info.gain, 3)}</span>
+                    </div>
+                  )}
+
+                  {/* Class Distribution for Leaf Nodes */}
+                  {hoveredNode.type === 'leaf' && hoveredNode.info.classes && (
+                    <div className="mt-3 pt-3 border-t border-gray-700">
+                      <div className="text-gray-300 text-xs mb-2">Class Distribution:</div>
+                      <div className="space-y-1">
+                        {Object.entries(hoveredNode.info.classes)
+                          .sort(([,a], [,b]) => b - a)
+                          .map(([cls, count]) => (
+                            <div key={cls} className="flex justify-between items-center">
+                              <span className="text-xs text-gray-400">{cls}:</span>
+                              <div className="flex items-center gap-2">
+                                <div className="w-16 h-1.5 bg-gray-700 rounded-full overflow-hidden">
+                                  <div 
+                                    className={`h-full rounded-full ${
+                                      cls === hoveredNode.info.majorityClass 
+                                        ? 'bg-green-400' 
+                                        : 'bg-blue-400'
+                                    }`}
+                                    style={{ 
+                                      width: `${(count / hoveredNode.info.samples) * 100}%` 
+                                    }}
+                                  ></div>
+                                </div>
+                                <span className="font-mono text-xs text-white">{count}</span>
+                              </div>
+                            </div>
+                          ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Split Information */}
+                  {hoveredNode.type === 'split' && hoveredNode.level === 0 && (
+                    <div className="mt-3 pt-3 border-t border-gray-700">
+                      <div className="text-xs text-gray-300">
+                        Root split feature selected based on highest information gain
                       </div>
                     </div>
                   )}
                 </div>
               </div>
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
       
       <div className="mt-3 text-center">
