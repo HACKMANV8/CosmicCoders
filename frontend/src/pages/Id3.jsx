@@ -417,7 +417,16 @@ export default function Id3AutoRunner() {
 
   // Handle keyboard navigation
   useEffect(() => {
+    
     const handleKeyPress = (event) => {
+        const targetNode = event.target.nodeName;
+      if (
+        targetNode === "INPUT" ||
+        targetNode === "TEXTAREA" ||
+        targetNode === "BUTTON"
+      ){
+        return; 
+      }
       if (showAllSteps || !result?.steps) return; // Don't navigate when showing all steps
       
       if (event.key === 'ArrowRight' || event.key === ' ') {
