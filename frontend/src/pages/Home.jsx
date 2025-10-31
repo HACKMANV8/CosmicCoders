@@ -64,6 +64,10 @@ function Home() {
       setUploadSuccess(true);
       setDatasetId(result.dataset_id);
       localStorage.setItem("datasetid", result.dataset_id);
+      localStorage.setItem(
+  "dataset_meta",
+  JSON.stringify({ columns: result.columns, rows: result.rows })
+);
 
       // ✅ Store algorithms from backend
       if (result.suggested_algorithms) {
@@ -96,7 +100,13 @@ function Home() {
       algo.toLowerCase() === "simple_linear_regression"
     ) {
       navigate("/simpleLinearRegression");
-    } else {
+    } 
+    else if (
+      algo.toLowerCase() === "id3" 
+    ) {
+      navigate("/id3");
+    } 
+    else {
       alert(`No page setup for ${algo}`);
     }
   };
