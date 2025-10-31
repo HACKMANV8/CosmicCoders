@@ -13,6 +13,8 @@ import csv
 import pandas as pd
 from fastapi import HTTPException
 import json
+import os
+
 import glob
 from linear_regression import run_linear_regression
 from id3 import compute_id3_root_steps
@@ -299,18 +301,19 @@ class CalcRequest(BaseModel):
 async def calculate(req: CalcRequest):
     csv_path = find_dataset_path(req.dataset_id)
     try:
-        df = read_tabular_file(csv_path)  
+        df = read_tabular_file(csv_path)
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Failed to read dataset: {e}")
 
     params = req.params or {}
-    
+
     if req.algorithm == "id3":
         target = params.get("target")
         features = params.get("features")
         if not target:
             raise HTTPException(status_code=400, detail="params.target is required for ID3")
-        out = compute_id3_root_steps(df, target=target, features=features)
+
+        result = compute_id3_root_steps(df, target=target, features=features)
     else:
         raise HTTPException(status_code=400, detail="Unsupported algorithm")
 
@@ -358,3 +361,141 @@ async def simple_linear_regression(req: LinearRegressionRequest = Body(...)):
         "metadata": result.get("metadata"),
     })
 
+
+
+@app.post("/naivebayes")
+def naive_bayes_calculation(request: dict):
+    try:
+        dataset_id: str | None = request.get("dataset_id")
+        algo: str = (request.get("algorithm") or "").strip().lower()
+        params: Dict[str, Any] = request.get("params", {}) or {}
+        target_col: str | None = params.get("target")
+        example: Dict[str, Any] = params.get("example", {}) or {}
+
+        if not dataset_id:
+            raise HTTPException(status_code=400, detail="dataset_id is required")
+        if not target_col:
+            raise HTTPException(status_code=400, detail="params.target is required")
+        if algo != "naive_bayes":
+            raise HTTPException(status_code=400, detail="Algorithm not supported in this route")
+
+        # ✅ Use your saved uploads location
+        csv_path = find_dataset_path(dataset_id)          # <— use helper
+        df = read_tabular_file(csv_path)                  # <— robust reader
+
+        if target_col not in df.columns:
+            raise HTTPException(status_code=400, detail=f"Target column '{target_col}' not found")
+
+        # Treat all features as categorical for this simple NB (convert to string)
+        y = df[target_col].astype("string")
+        X = df.drop(columns=[target_col]).astype("string")
+
+        classes: List[str] = sorted(y.dropna().unique().tolist())
+
+        # ---- STEP 1: Priors P(class) ----
+        priors: Dict[str, float] = {}
+        total = float(len(y))
+        for c in classes:
+            priors[c] = round(float((y == c).sum()) / total, 6) if total > 0 else 0.0
+
+        # ---- STEP 2: Likelihoods P(x_i=val | class) with Laplace smoothing ----
+        likelihoods: Dict[str, Dict[str, float]] = {}
+        for c in classes:
+            subset = df[y == c]
+            subset_X = subset.drop(columns=[target_col]).astype("string")
+            likelihoods[c] = {}
+            for feature in X.columns:
+                # value requested to score with (stringified for consistency)
+                val = str(example.get(feature, ""))
+                # observed counts for this feature in class c
+                vc = subset_X[feature].value_counts(dropna=False)
+                count_val = int(vc.get(val, 0))
+                k = int(subset_X[feature].nunique(dropna=False) or 1)
+                n = int(len(subset_X))
+                # Laplace smoothing: (count+1)/(n+k)
+                prob = (count_val + 1.0) / (n + k) if (n + k) > 0 else 0.0
+                likelihoods[c][feature] = round(prob, 6)
+
+        # ---- STEP 3: Unnormalized posteriors ∝ P(class) * Π P(x_i|class) ----
+        posteriors: Dict[str, float] = {}
+        for c in classes:
+            post = priors[c]
+            for feature in X.columns:
+                post *= likelihoods[c][feature]
+            posteriors[c] = float(post)
+
+        # ---- STEP 4: Normalize (evidence) ----
+        evidence = float(sum(posteriors.values()))
+        posteriors_norm: Dict[str, float] = {}
+        if evidence > 0.0:
+            for c in classes:
+                posteriors_norm[c] = round(posteriors[c] / evidence, 8)
+        else:
+            # fallback to uniform if everything underflowed to zero
+            uniform = round(1.0 / max(len(classes), 1), 8) if classes else 0.0
+            for c in classes:
+                posteriors_norm[c] = uniform
+
+        # ---- STEP 5: Prediction ----
+        # Avoid dict.get in max (typing ambiguity); use items() + key lambda
+        if not posteriors_norm:
+            raise HTTPException(status_code=422, detail="No classes available for prediction")
+        predicted, confidence = max(posteriors_norm.items(), key=lambda kv: kv[1])
+
+        # ---- Response shaped for frontend (render each value & calculation) ----
+        return {
+            "meta": {
+                "dataset_id": dataset_id,
+                "target": target_col,
+                "features": list(X.columns),
+                "classes": classes,
+                "example": example,
+            },
+            "steps": [
+                {
+                    "step": 1,
+                    "title": "Compute Priors",
+                    "description": "P(C) = count(C)/N for each class",
+                    "priors": priors,
+                    "N": int(total),
+                    "class_counts": {c: int((y == c).sum()) for c in classes},
+                },
+                {
+                    "step": 2,
+                    "title": "Compute Likelihoods with Laplace smoothing",
+                    "description": "P(x_i = v | C) = (count + 1) / (n + k)",
+                    "likelihoods": likelihoods,
+                },
+                {
+                    "step": 3,
+                    "title": "Unnormalized Posterior",
+                    "description": "P(C) × Π_i P(x_i|C)",
+                    "posteriors_unnormalized": posteriors,
+                },
+                {
+                    "step": 4,
+                    "title": "Normalize",
+                    "description": "P(C|x) = numerator / evidence",
+                    "evidence": evidence,
+                    "posteriors": posteriors_norm,
+                },
+                {
+                    "step": 5,
+                    "title": "Prediction",
+                    "description": "Choose class with max posterior",
+                    "predicted": predicted,
+                    "confidence": confidence,
+                },
+            ],
+            "result": {
+                "predicted": predicted,
+                "confidence": confidence,
+            },
+            # small preview for UI
+            "dataset_preview": df.head(5).to_dict(orient="records"),
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

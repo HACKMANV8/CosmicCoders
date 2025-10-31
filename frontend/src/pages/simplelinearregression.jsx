@@ -259,6 +259,95 @@ const LinearRegressionSteps = () => {
     );
   };
 
+  // Helper function to render step content
+  const renderStepContent = (step, idx) => {
+    return (
+      <>
+        <h3 className="text-xl font-bold text-white mb-2">
+          Step {step.step_number}: {step.title}
+        </h3>
+        <p className="text-white/80 mb-4">{step.description}</p>
+        
+        {step.formula && (
+          <div className="bg-white/5 rounded-xl p-4 mb-3 border border-white/10">
+            <div className="text-sm text-white/70 mb-1 font-medium">Formula:</div>
+            <div className="font-mono text-yellow-300 text-lg">{step.formula}</div>
+          </div>
+        )}
+
+        {step.calculation && (
+          <div className="bg-white/5 rounded-xl p-4 mb-3 border border-white/10">
+            <div className="text-sm text-white/70 mb-1 font-medium">Calculation:</div>
+            <div className="font-mono text-green-300 text-lg">{step.calculation}</div>
+          </div>
+        )}
+
+        {step.equation && (
+          <div className="bg-emerald-600/20 rounded-xl p-4 mb-3 border border-emerald-400/30">
+            <div className="text-sm text-emerald-200 mb-1 font-medium">Final Equation:</div>
+            <div className="font-mono text-emerald-100 text-xl font-bold">{step.equation}</div>
+          </div>
+        )}
+
+        {step.sample_data && (
+          <div className="bg-white/5 rounded-xl p-4 border border-white/10">
+            <div className="text-sm text-white/70 mb-3 font-medium">Sample Predictions:</div>
+            <div className="space-y-2">
+              {step.sample_data.map((sample, i) => (
+                <div key={i} className="flex justify-between items-center text-sm bg-white/5 rounded-lg p-3">
+                  <span className="text-white font-medium">
+                    X: {sample.x} → Actual: {sample.y_actual.toFixed(0)}
+                  </span>
+                  <span className="text-green-300 font-bold">
+                    Predicted: {sample.y_predicted.toFixed(0)}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {step.interpretation && (
+          <div className="bg-blue-600/20 rounded-xl p-4 mt-3 border border-blue-400/30">
+            <div className="text-blue-200">{step.interpretation}</div>
+          </div>
+        )}
+
+        {/* Display mathematical formulas with KaTeX */}
+        {step.step_number === 1 && step.x_mean !== undefined && step.y_mean !== undefined && (
+          <div className="mt-4 bg-gray-900/50 rounded-xl p-4">
+            <BlockMath math={`\\bar{x} = \\frac{\\sum x_i}{n} = ${step.x_mean.toFixed(3)}`} />
+            <BlockMath math={`\\bar{y} = \\frac{\\sum y_i}{n} = ${step.y_mean.toFixed(3)}`} />
+          </div>
+        )}
+
+        {step.step_number === 2 && step.slope !== undefined && (
+          <div className="mt-4 bg-gray-900/50 rounded-xl p-4">
+            <BlockMath math={`m = \\frac{\\sum (x_i - \\bar{x})(y_i - \\bar{y})}{\\sum (x_i - \\bar{x})^2} = ${step.slope.toFixed(3)}`} />
+          </div>
+        )}
+
+        {step.step_number === 3 && step.intercept !== undefined && (
+          <div className="mt-4 bg-gray-900/50 rounded-xl p-4">
+            <BlockMath math={`c = \\bar{y} - m \\bar{x} = ${step.intercept.toFixed(3)}`} />
+          </div>
+        )}
+
+        {step.step_number === 4 && step.equation && (
+          <div className="mt-4 bg-gray-900/50 rounded-xl p-4">
+            <BlockMath math={`y = mx + c`} />
+          </div>
+        )}
+
+        {step.step_number === 6 && step.r2_score !== undefined && (
+          <div className="mt-4 bg-gray-900/50 rounded-xl p-4">
+            <BlockMath math={`R^2 = 1 - \\frac{SS_{res}}{SS_{tot}} = ${step.r2_score.toFixed(3)}`} />
+          </div>
+        )}
+      </>
+    );
+  };
+
   if (loading) {
     return (
       <main className="min-h-screen w-full bg-linear-to-br from-sky-700 via-blue-700 to-emerald-600 flex items-center justify-center px-6">
@@ -452,95 +541,6 @@ const LinearRegressionSteps = () => {
       </div>
     </main>
   );
-
-  // Helper function to render step content
-  function renderStepContent(step, idx) {
-    return (
-      <>
-        <h3 className="text-xl font-bold text-white mb-2">
-          Step {step.step_number}: {step.title}
-        </h3>
-        <p className="text-white/80 mb-4">{step.description}</p>
-        
-        {step.formula && (
-          <div className="bg-white/5 rounded-xl p-4 mb-3 border border-white/10">
-            <div className="text-sm text-white/70 mb-1 font-medium">Formula:</div>
-            <div className="font-mono text-yellow-300 text-lg">{step.formula}</div>
-          </div>
-        )}
-
-        {step.calculation && (
-          <div className="bg-white/5 rounded-xl p-4 mb-3 border border-white/10">
-            <div className="text-sm text-white/70 mb-1 font-medium">Calculation:</div>
-            <div className="font-mono text-green-300 text-lg">{step.calculation}</div>
-          </div>
-        )}
-
-        {step.equation && (
-          <div className="bg-emerald-600/20 rounded-xl p-4 mb-3 border border-emerald-400/30">
-            <div className="text-sm text-emerald-200 mb-1 font-medium">Final Equation:</div>
-            <div className="font-mono text-emerald-100 text-xl font-bold">{step.equation}</div>
-          </div>
-        )}
-
-        {step.sample_data && (
-          <div className="bg-white/5 rounded-xl p-4 border border-white/10">
-            <div className="text-sm text-white/70 mb-3 font-medium">Sample Predictions:</div>
-            <div className="space-y-2">
-              {step.sample_data.map((sample, i) => (
-                <div key={i} className="flex justify-between items-center text-sm bg-white/5 rounded-lg p-3">
-                  <span className="text-white font-medium">
-                    X: {sample.x} → Actual: {sample.y_actual.toFixed(0)}
-                  </span>
-                  <span className="text-green-300 font-bold">
-                    Predicted: {sample.y_predicted.toFixed(0)}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {step.interpretation && (
-          <div className="bg-blue-600/20 rounded-xl p-4 mt-3 border border-blue-400/30">
-            <div className="text-blue-200">{step.interpretation}</div>
-          </div>
-        )}
-
-        {/* Display mathematical formulas with KaTeX */}
-        {step.step_number === 1 && step.x_mean !== undefined && step.y_mean !== undefined && (
-          <div className="mt-4 bg-gray-900/50 rounded-xl p-4">
-            <BlockMath math={`\\bar{x} = \\frac{\\sum x_i}{n} = ${step.x_mean.toFixed(3)}`} />
-            <BlockMath math={`\\bar{y} = \\frac{\\sum y_i}{n} = ${step.y_mean.toFixed(3)}`} />
-          </div>
-        )}
-
-        {step.step_number === 2 && step.slope !== undefined && (
-          <div className="mt-4 bg-gray-900/50 rounded-xl p-4">
-            <BlockMath math={`m = \\frac{\\sum (x_i - \\bar{x})(y_i - \\bar{y})}{\\sum (x_i - \\bar{x})^2} = ${step.slope.toFixed(3)}`} />
-          </div>
-        )}
-
-        {step.step_number === 3 && step.intercept !== undefined && (
-          <div className="mt-4 bg-gray-900/50 rounded-xl p-4">
-            <BlockMath math={`c = \\bar{y} - m \\bar{x} = ${step.intercept.toFixed(3)}`} />
-          </div>
-        )}
-
-        {step.step_number === 4 && step.equation && (
-          <div className="mt-4 bg-gray-900/50 rounded-xl p-4">
-            <BlockMath math={`y = mx + c`} />
-          </div>
-        )}
-
-        {step.step_number === 6 && step.r2_score !== undefined && (
-          <div className="mt-4 bg-gray-900/50 rounded-xl p-4">
-            <BlockMath math={`R^2 = 1 - \\frac{SS_{res}}{SS_{tot}} = ${step.r2_score.toFixed(3)}`} />
-          </div>
-        )}
-      </>
-    );
-  }
 };
 
 export default LinearRegressionSteps;
