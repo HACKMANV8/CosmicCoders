@@ -1,9 +1,9 @@
-import React from "react";
+import { useEffect, useState } from "react";
 import { BlockMath, InlineMath } from "react-katex";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ScatterChart, Scatter, Cell } from 'recharts';
 import "katex/dist/katex.min.css";
 
-const  LinearRegressionSteps = () => {
+const LinearRegressionSteps = () => {
   const [steps, setSteps] = useState([]);
   const [summary, setSummary] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -13,10 +13,16 @@ const  LinearRegressionSteps = () => {
   const [chartData, setChartData] = useState([]);
   const [metadata, setMetadata] = useState(null);
 
-  // Step 1: Compute means
-  const mean = (arr) => arr.reduce((a, b) => a + b, 0) / arr.length;
-  const meanX = mean(x);
-  const meanY = mean(y);
+  useEffect(() => {
+    async function fetchCalculation() {
+      // Get dataset ID from localStorage (set in Home.jsx)
+      const datasetId = localStorage.getItem("datasetid");
+      
+      if (!datasetId) {
+        setError("No dataset ID found. Please upload a dataset first.");
+        setLoading(false);
+        return;
+      }
 
       try {
         const response = await fetch("http://localhost:8000/simplelinearregression", {
@@ -29,8 +35,9 @@ const  LinearRegressionSteps = () => {
           })
         });
 
-  // Step 3: Compute intercept (c)
-  const c = meanY - m * meanX;
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
 
         const result = await response.json();
         console.log("Calculation result:", result);
@@ -118,19 +125,26 @@ const  LinearRegressionSteps = () => {
     if (active && payload && payload.length) {
       const data = payload[0].payload;
       return (
-        <div className="bg-white/95 border border-gray-300 rounded-lg p-3 shadow-lg">
-          <p className="font-semibold text-gray-800">
-            {metadata?.feature_column || 'X'}: {label}
+        <div className="bg-linear-to-br from-white/95 to-white/90 backdrop-blur-lg border border-white/30 rounded-xl p-4 shadow-2xl ring-1 ring-black/5">
+          <p className="font-bold text-gray-800 text-sm mb-2">
+            {metadata?.feature_column || 'X'}: <span className="text-blue-600">{label}</span>
           </p>
-          <p className="text-blue-600">
-            Actual {metadata?.target_column || 'Y'}: {data.y_actual.toFixed(2)}
-          </p>
-          <p className="text-green-600">
-            Predicted {metadata?.target_column || 'Y'}: {data.y_predicted.toFixed(2)}
-          </p>
-          <p className="text-gray-600 text-sm">
-            Error: {Math.abs(data.y_actual - data.y_predicted).toFixed(2)}
-          </p>
+          <div className="space-y-1 text-sm">
+            <p className="flex justify-between items-center">
+              <span className="text-gray-700">Actual {metadata?.target_column || 'Y'}:</span>
+              <span className="font-semibold text-blue-600">{data.y_actual.toFixed(2)}</span>
+            </p>
+            <p className="flex justify-between items-center">
+              <span className="text-gray-700">Predicted {metadata?.target_column || 'Y'}:</span>
+              <span className="font-semibold text-green-600">{data.y_predicted.toFixed(2)}</span>
+            </p>
+            <div className="border-t border-gray-200 pt-1 mt-2">
+              <p className="flex justify-between items-center text-xs">
+                <span className="text-gray-600">Error:</span>
+                <span className="font-medium text-red-500">{Math.abs(data.y_actual - data.y_predicted).toFixed(2)}</span>
+              </p>
+            </div>
+          </div>
         </div>
       );
     }
@@ -138,74 +152,108 @@ const  LinearRegressionSteps = () => {
   };
 
   // Render interactive chart
-  const RegressionChart = () => {
-    if (!chartData.length || !metadata) return null;
+  const RegressionChart = ({ isInStep = false }) => {
+    if (!chartData.length || !metadata) {
+      return null;
+    }
+
+    const containerClass = isInStep 
+      ? "bg-linear-to-br from-white/5 to-white/10 backdrop-blur-md rounded-xl p-4 border border-white/20 shadow-2xl"
+      : "bg-linear-to-br from-white/10 to-white/5 backdrop-blur-sm rounded-2xl p-6 mb-6 shadow-xl ring-1 ring-white/20";
 
     return (
-      <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 mb-6 shadow-xl ring-1 ring-white/10">
-        <h2 className="text-xl font-bold text-white mb-4">📈 Interactive Regression Chart</h2>
-        <div className="bg-white/5 rounded-xl p-4">
-          <ResponsiveContainer width="100%" height={400}>
+      <div className={containerClass}>
+        {!isInStep && (
+          <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+            <span className="text-2xl">📈</span>
+            Interactive Regression Chart
+          </h2>
+        )}
+        <div className="bg-white/10 rounded-xl p-4 border border-white/20">
+          <ResponsiveContainer width="100%" height={isInStep ? 280 : 400}>
             <ScatterChart data={chartData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#ffffff20" />
+              <CartesianGrid 
+                strokeDasharray="3 3" 
+                stroke="rgba(100,116,139,0.3)" 
+                strokeWidth={1}
+              />
               <XAxis 
                 dataKey="x" 
                 type="number" 
                 domain={['dataMin - 0.5', 'dataMax + 0.5']}
-                tick={{ fill: '#ffffff80', fontSize: 12 }}
+                tick={{ fill: '#374151', fontSize: 11, fontWeight: 500 }}
+                axisLine={{ stroke: 'rgba(100,116,139,0.4)', strokeWidth: 1 }}
+                tickLine={{ stroke: 'rgba(100,116,139,0.4)', strokeWidth: 1 }}
                 label={{ 
                   value: metadata.feature_column, 
                   position: 'insideBottom', 
-                  offset: -10,
-                  style: { textAnchor: 'middle', fill: '#ffffff80' }
+                  offset: -8,
+                  style: { 
+                    textAnchor: 'middle', 
+                    fill: '#374151', 
+                    fontWeight: 600,
+                    fontSize: 12
+                  }
                 }}
               />
               <YAxis 
-                tick={{ fill: '#ffffff80', fontSize: 12 }}
+                tick={{ fill: '#374151', fontSize: 11, fontWeight: 500 }}
+                axisLine={{ stroke: 'rgba(100,116,139,0.4)', strokeWidth: 1 }}
+                tickLine={{ stroke: 'rgba(100,116,139,0.4)', strokeWidth: 1 }}
                 label={{ 
                   value: metadata.target_column, 
                   angle: -90, 
                   position: 'insideLeft',
-                  style: { textAnchor: 'middle', fill: '#ffffff80' }
+                  style: { 
+                    textAnchor: 'middle', 
+                    fill: '#374151',
+                    fontWeight: 600,
+                    fontSize: 12
+                  }
                 }}
               />
               <Tooltip content={<CustomTooltip />} />
-              <Legend wrapperStyle={{ color: '#ffffff80' }} />
               
-              {/* Actual data points */}
+              {/* Actual data points with glow effect */}
               <Scatter 
                 name="Actual Data" 
                 dataKey="y_actual" 
-                fill="#3b82f6"
-                r={4}
+                fill="#60a5fa"
+                stroke="#3b82f6"
+                strokeWidth={2}
+                r={6}
               />
               
               {/* Predicted values - regression line */}
               <Scatter 
                 name="Regression Line" 
                 dataKey="y_predicted" 
-                fill="#10b981"
-                r={2}
+                fill="#34d399"
+                stroke="#10b981"
+                strokeWidth={2}
+                r={3}
                 shape="diamond"
               />
             </ScatterChart>
           </ResponsiveContainer>
         </div>
         
-        <div className="mt-4 text-center">
-          <div className="flex justify-center items-center gap-6 text-sm text-white/80">
+        <div className="mt-3 text-center">
+          <div className="flex justify-center items-center gap-6 text-xs text-white/90 font-medium">
             <div className="flex items-center gap-2">
-              <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-              <span>Actual Data Points</span>
+              <div className="w-3 h-3 bg-blue-400 rounded-full shadow-lg border border-blue-300"></div>
+              <span>Actual Data</span>
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-3 h-3 bg-green-500" style={{clipPath: 'polygon(50% 0%, 0% 100%, 100% 100%)'}}></div>
-              <span>Predicted Values (Regression Line)</span>
+              <div className="w-3 h-3 bg-green-400 transform rotate-45 shadow-lg border border-green-300"></div>
+              <span>Predicted</span>
             </div>
           </div>
-          <p className="text-white/60 text-xs mt-2">
-            Hover over points to see actual vs predicted values and prediction error
-          </p>
+          {!isInStep && (
+            <p className="text-white/70 text-xs mt-2">
+              Hover over points to see actual vs predicted values and prediction error
+            </p>
+          )}
         </div>
       </div>
     );
@@ -240,16 +288,14 @@ const  LinearRegressionSteps = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white flex flex-col items-center py-10 px-4 space-y-8">
-      <h1 className="text-3xl font-bold text-blue-400 mb-6">
-        Simple Linear Regression – Step-by-Step
-      </h1>
-
-      {/* Step 1 */}
-      <div className="bg-gray-800 p-6 rounded-2xl shadow-lg w-full md:w-3/4">
-        <h2 className="text-xl text-green-400 font-semibold mb-3">Step 1: Compute Means</h2>
-        <p className="mb-2">
-          <InlineMath math={`\\bar{x} = ${meanX.toFixed(2)}, \\quad \\bar{y} = ${meanY.toFixed(2)}`} />
+    <main className="min-h-screen w-full bg-linear-to-br from-sky-700 via-blue-700 to-emerald-600 flex items-center justify-center px-6">
+      <div className="text-center max-w-6xl w-full">
+        <h1 className="text-white text-4xl md:text-6xl font-extrabold tracking-tight drop-shadow-[0_6px_20px_rgba(0,0,0,0.45)] mb-4">
+          Simple Linear Regression
+        </h1>
+        
+        <p className="mt-4 text-white/85 mb-8">
+          Step-by-step calculation with your dataset
         </p>
 
         {/* Controls */}
@@ -322,23 +368,50 @@ const  LinearRegressionSteps = () => {
           </div>
         )}
 
-        {/* Interactive Chart - Show when viewing all steps or after step 4 */}
-        {(showAllSteps || currentStep >= 3) && <RegressionChart />}
+        {/* Chart is now integrated into steps 4, 5, 6 - no separate chart section needed */}
 
         {/* Steps - Show all or current step */}
         <div className="space-y-6">
           {showAllSteps ? (
             // Show all steps
             steps.map((step, idx) => (
-              <div key={idx} className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 shadow-xl ring-1 ring-white/10 text-left">
-                {renderStepContent(step, idx)}
+              <div key={idx} className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 shadow-xl ring-1 ring-white/10">
+                {/* For steps 4, 5, 6 show side-by-side layout with chart */}
+                {(step.step_number >= 4) ? (
+                  <div className="grid lg:grid-cols-2 gap-6 items-start">
+                    <div className="text-left">
+                      {renderStepContent(step, idx)}
+                    </div>
+                    <div className="lg:sticky lg:top-6">
+                      <RegressionChart isInStep={true} />
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-left">
+                    {renderStepContent(step, idx)}
+                  </div>
+                )}
               </div>
             ))
           ) : (
             // Show current step only
             steps.length > 0 && (
-              <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 shadow-xl ring-1 ring-white/10 text-left transform transition-all duration-300 scale-105">
-                {renderStepContent(steps[currentStep], currentStep)}
+              <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 shadow-xl ring-1 ring-white/10 transform transition-all duration-300 scale-105">
+                {/* For steps 4, 5, 6 show side-by-side layout with chart */}
+                {(steps[currentStep].step_number >= 4) ? (
+                  <div className="grid lg:grid-cols-2 gap-6 items-start">
+                    <div className="text-left">
+                      {renderStepContent(steps[currentStep], currentStep)}
+                    </div>
+                    <div className="lg:sticky lg:top-6">
+                      <RegressionChart isInStep={true} />
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-left">
+                    {renderStepContent(steps[currentStep], currentStep)}
+                  </div>
+                )}
               </div>
             )
           )}
@@ -379,41 +452,97 @@ const  LinearRegressionSteps = () => {
           </button>
         </div>
       </div>
-
-      {/* Step 2 */}
-      <div className="bg-gray-800 p-6 rounded-2xl shadow-lg w-full md:w-3/4">
-        <h2 className="text-xl text-yellow-400 font-semibold mb-3">Step 2: Compute Slope (m)</h2>
-        <BlockMath math={`m = \\frac{\\sum (x_i - \\bar{x})(y_i - \\bar{y})}{\\sum (x_i - \\bar{x})^2}`} />
-        <p className="mt-2">
-          <InlineMath math={`m = ${numerator.toFixed(2)} / ${denominator.toFixed(2)} = ${m.toFixed(3)}`} />
-        </p>
-      </div>
-
-      {/* Step 3 */}
-      <div className="bg-gray-800 p-6 rounded-2xl shadow-lg w-full md:w-3/4">
-        <h2 className="text-xl text-pink-400 font-semibold mb-3">Step 3: Compute Intercept (c)</h2>
-        <BlockMath math={`c = \\bar{y} - m \\bar{x}`} />
-        <p className="mt-2">
-          <InlineMath math={`c = ${meanY.toFixed(2)} - (${m.toFixed(3)} \\times ${meanX.toFixed(2)}) = ${c.toFixed(3)}`} />
-        </p>
-      </div>
-
-      {/* Step 4 */}
-      <div className="bg-gray-800 p-6 rounded-2xl shadow-lg w-full md:w-3/4">
-        <h2 className="text-xl text-purple-400 font-semibold mb-3">Step 4: Prediction</h2>
-        <BlockMath math={`y = mx + c`} />
-        <p className="mt-2">
-          <InlineMath math={`y = (${m.toFixed(3)})(6) + (${c.toFixed(3)}) = ${yPred.toFixed(2)}`} />
-        </p>
-      </div>
-
-      {/* Final Equation */}
-      <div className="bg-gray-800 p-6 rounded-2xl shadow-lg w-full md:w-3/4 border border-blue-400">
-        <h2 className="text-xl text-blue-400 font-semibold mb-3">Final Regression Line</h2>
-        <BlockMath math={`y = ${m.toFixed(3)}x + ${c.toFixed(3)}`} />
-      </div>
-    </div>
+    </main>
   );
+
+  // Helper function to render step content
+  function renderStepContent(step, idx) {
+    return (
+      <>
+        <h3 className="text-xl font-bold text-white mb-2">
+          Step {step.step_number}: {step.title}
+        </h3>
+        <p className="text-white/80 mb-4">{step.description}</p>
+        
+        {step.formula && (
+          <div className="bg-white/5 rounded-xl p-4 mb-3 border border-white/10">
+            <div className="text-sm text-white/70 mb-1 font-medium">Formula:</div>
+            <div className="font-mono text-yellow-300 text-lg">{step.formula}</div>
+          </div>
+        )}
+
+        {step.calculation && (
+          <div className="bg-white/5 rounded-xl p-4 mb-3 border border-white/10">
+            <div className="text-sm text-white/70 mb-1 font-medium">Calculation:</div>
+            <div className="font-mono text-green-300 text-lg">{step.calculation}</div>
+          </div>
+        )}
+
+        {step.equation && (
+          <div className="bg-emerald-600/20 rounded-xl p-4 mb-3 border border-emerald-400/30">
+            <div className="text-sm text-emerald-200 mb-1 font-medium">Final Equation:</div>
+            <div className="font-mono text-emerald-100 text-xl font-bold">{step.equation}</div>
+          </div>
+        )}
+
+        {step.sample_data && (
+          <div className="bg-white/5 rounded-xl p-4 border border-white/10">
+            <div className="text-sm text-white/70 mb-3 font-medium">Sample Predictions:</div>
+            <div className="space-y-2">
+              {step.sample_data.map((sample, i) => (
+                <div key={i} className="flex justify-between items-center text-sm bg-white/5 rounded-lg p-3">
+                  <span className="text-white font-medium">
+                    X: {sample.x} → Actual: {sample.y_actual.toFixed(0)}
+                  </span>
+                  <span className="text-green-300 font-bold">
+                    Predicted: {sample.y_predicted.toFixed(0)}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {step.interpretation && (
+          <div className="bg-blue-600/20 rounded-xl p-4 mt-3 border border-blue-400/30">
+            <div className="text-blue-200">{step.interpretation}</div>
+          </div>
+        )}
+
+        {/* Display mathematical formulas with KaTeX */}
+        {step.step_number === 1 && step.x_mean !== undefined && step.y_mean !== undefined && (
+          <div className="mt-4 bg-gray-900/50 rounded-xl p-4">
+            <BlockMath math={`\\bar{x} = \\frac{\\sum x_i}{n} = ${step.x_mean.toFixed(3)}`} />
+            <BlockMath math={`\\bar{y} = \\frac{\\sum y_i}{n} = ${step.y_mean.toFixed(3)}`} />
+          </div>
+        )}
+
+        {step.step_number === 2 && step.slope !== undefined && (
+          <div className="mt-4 bg-gray-900/50 rounded-xl p-4">
+            <BlockMath math={`m = \\frac{\\sum (x_i - \\bar{x})(y_i - \\bar{y})}{\\sum (x_i - \\bar{x})^2} = ${step.slope.toFixed(3)}`} />
+          </div>
+        )}
+
+        {step.step_number === 3 && step.intercept !== undefined && (
+          <div className="mt-4 bg-gray-900/50 rounded-xl p-4">
+            <BlockMath math={`c = \\bar{y} - m \\bar{x} = ${step.intercept.toFixed(3)}`} />
+          </div>
+        )}
+
+        {step.step_number === 4 && step.equation && (
+          <div className="mt-4 bg-gray-900/50 rounded-xl p-4">
+            <BlockMath math={`y = mx + c`} />
+          </div>
+        )}
+
+        {step.step_number === 6 && step.r2_score !== undefined && (
+          <div className="mt-4 bg-gray-900/50 rounded-xl p-4">
+            <BlockMath math={`R^2 = 1 - \\frac{SS_{res}}{SS_{tot}} = ${step.r2_score.toFixed(3)}`} />
+          </div>
+        )}
+      </>
+    );
+  }
 };
 
 export default LinearRegressionSteps;
