@@ -879,5 +879,104 @@
 "id": "56",
 "question": "What are some applications of Linear Regression?",
 "answer": "Applications include predicting house prices, estimating sales, and modeling medical outcomes."
-}
+},{
+        "id": "1",
+        "question": "What is the target variable in this linear regression output?",
+        "answer": "The target variable is 'value', which represents the dependent variable being predicted based on YearsExperience."
+    },
+    {
+        "id": "2",
+        "question": "What does x̄ represent in Step 1?",
+        "answer": "x̄ represents the mean of the independent variable X (YearsExperience), calculated by summing all X values and dividing by the total number of data points."
+    },
+    {
+        "id": "3",
+        "question": "How is the mean of Y (ȳ) calculated?",
+        "answer": "ȳ is calculated by summing all Y values (value) and dividing by the total number of data points: ȳ = Σy / n."
+    },
+    {
+        "id": "4",
+        "question": "Why do we calculate the mean before finding the slope?",
+        "answer": "The means of X and Y are used to measure how each data point deviates from the average, which is essential to calculate the slope of the best-fit line."
+    },
+    {
+        "id": "5",
+        "question": "What does the slope (m) represent in linear regression?",
+        "answer": "The slope (m) indicates how much the target variable (value) changes for every one-unit increase in the independent variable (YearsExperience)."
+    },
+    {
+        "id": "6",
+        "question": "How was the slope calculated in this example?",
+        "answer": "The slope was calculated using the formula m = Σ(x−x̄)(y−ȳ) / Σ(x−x̄)². The computed slope value is 9449.962."
+    },
+    {
+        "id": "7",
+        "question": "What does the intercept (c) represent?",
+        "answer": "The intercept (c) represents the predicted value of Y when X = 0. In this example, it is 24848.204, meaning that an employee with 0 years of experience is expected to earn approximately 24,848."
+    },
+    {
+        "id": "8",
+        "question": "What is the regression equation derived from this model?",
+        "answer": "The regression equation is value = 9449.962 × YearsExperience + 24848.204. It defines the line of best fit for predicting salaries based on experience."
+    },
+    {
+        "id": "9",
+        "question": "How do you interpret the slope value 9449.962?",
+        "answer": "It means that for each additional year of experience, the model predicts an average increase of approximately 9,450 in salary."
+    },
+    {
+        "id": "10",
+        "question": "Why is the intercept positive?",
+        "answer": "Because even with 0 years of experience, the model estimates a base value or starting salary instead of 0. This is common in many regression models."
+    },
+    {
+        "id": "11",
+        "question": "What is the purpose of Step 5 (Sample Predictions)?",
+        "answer": "Step 5 checks how well the regression equation predicts real data points by comparing predicted and actual values for sample X inputs."
+    },
+    {
+        "id": "12",
+        "question": "Why do the predicted values differ slightly from the actual values?",
+        "answer": "Predicted values are based on the best-fit line, which approximates the overall trend. Small differences occur due to natural data variability and random error."
+    },
+    {
+        "id": "13",
+        "question": "What is R² in Step 6?",
+        "answer": "R², or the coefficient of determination, measures how well the regression line fits the data. It shows what percentage of variation in Y is explained by X."
+    },
+    {
+        "id": "14",
+        "question": "How is R² calculated?",
+        "answer": "R² = 1 - (SS_res / SS_tot), where SS_res is the sum of squared residuals and SS_tot is the total sum of squares. It quantifies how much of the target's variance is explained by the model."
+    },
+    {
+        "id": "15",
+        "question": "What does an R² value of 0.957 mean?",
+        "answer": "It means that 95.7% of the variance in the target variable (value) can be explained by YearsExperience. This indicates a very strong linear relationship."
+    },
+    {
+        "id": "16",
+        "question": "What are residuals in regression?",
+        "answer": "Residuals are the differences between the actual Y values and the predicted Y values. They show how much error remains after fitting the regression line."
+    },
+    {
+        "id": "17",
+        "question": "Why do we minimize the sum of squared residuals?",
+        "answer": "Minimizing squared residuals ensures the regression line is as close as possible to all data points, giving the best overall fit."
+    },
+    {
+        "id": "18",
+        "question": "What assumption does linear regression make about the relationship between X and Y?",
+        "answer": "Linear regression assumes that X and Y have a linear relationship — meaning changes in X cause proportional changes in Y."
+    },
+    {
+        "id": "19",
+        "question": "Can this model be used to predict values outside the given range of X?",
+        "answer": "It can, but predictions outside the training range (extrapolation) may be unreliable since the relationship may not stay linear beyond the observed data."
+    },
+    {
+        "id": "20",
+        "question": "How can we improve the model if R² was low?",
+        "answer": "You could add more relevant features, collect more data, or consider non-linear models if the relationship between X and Y isn’t strictly linear."
+    }
 ]
