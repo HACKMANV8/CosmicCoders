@@ -1,84 +1,113 @@
-from fastapi import APIRouter, HTTPException
+# backend/routers/naivebayes.py
 import pandas as pd
-import numpy as np
-import os
+from collections import defaultdict
+from fastapi import APIRouter, Request, HTTPException
+from utils.helpers import find_dataset_path, read_tabular_file
 
 router = APIRouter()
 
-@router.post("/calculation")
-def naive_bayes_calculation(request: dict):
+@router.post("/naivebayes")
+async def naive_bayes(request: Request):
+    body = await request.json()
+    dataset_id = body.get("dataset_id")
+    params = body.get("params", {})
+    target = params.get("target")
+    example = params.get("example", {})
+
+    # --- Validation ---
+    if not dataset_id:
+        raise HTTPException(status_code=400, detail="dataset_id is required")
+    if not target:
+        raise HTTPException(status_code=400, detail="params.target is required")
+
+    # --- Load dataset ---
     try:
-        dataset_id = request.get("dataset_id")
-        algorithm = request.get("algorithm")
-        params = request.get("params", {})
-        target_col = params.get("target")
-        example = params.get("example", {})
-
-        # ✅ Ensure algorithm is Naive Bayes
-        if algorithm.lower() != "naive_bayes":
-            raise HTTPException(status_code=400, detail="Algorithm not supported in this route")
-
-        # ✅ Load dataset dynamically
-        dataset_path = f"datasets/{dataset_id}.csv"
-        if not os.path.exists(dataset_path):
-            raise HTTPException(status_code=404, detail="Dataset not found")
-
-        df = pd.read_csv(dataset_path)
-        if target_col not in df.columns:
-            raise HTTPException(status_code=400, detail=f"Target column '{target_col}' not found in dataset")
-
-        # ✅ Separate features and target
-        X = df.drop(columns=[target_col])
-        y = df[target_col]
-        classes = y.unique()
-
-        # --- STEP 1: PRIOR PROBABILITIES ---
-        priors = {}
-        total = len(y)
-        for c in classes:
-            priors[c] = round(len(y[y == c]) / total, 4)
-
-        # --- STEP 2: CONDITIONAL PROBABILITIES ---
-        likelihoods = {}
-        for c in classes:
-            subset = df[df[target_col] == c]
-            likelihoods[c] = {}
-            for feature in X.columns:
-                val = example.get(feature)
-                if val not in subset[feature].value_counts():
-                    # Laplace smoothing if unseen value
-                    prob = 1 / (len(subset) + len(subset[feature].unique()))
-                else:
-                    prob = subset[feature].value_counts()[val] / len(subset)
-                likelihoods[c][feature] = round(prob, 4)
-
-        # --- STEP 3: POSTERIOR PROBABILITIES ---
-        posteriors = {}
-        for c in classes:
-            post_prob = priors[c]
-            for feature, prob in likelihoods[c].items():
-                post_prob *= prob
-            posteriors[c] = post_prob
-
-        # Normalize for comparison
-        total_post = sum(posteriors.values())
-        for c in posteriors:
-            posteriors[c] = round(posteriors[c] / total_post, 6)
-
-        # --- STEP 4: PREDICTION ---
-        predicted = max(posteriors, key=posteriors.get)
-
-        # ✅ Construct the response
-        response = {
-            "dataset": df.head(5).to_dict(orient="records"),
-            "steps": {
-                "priors": priors,
-                "likelihoods": likelihoods,
-                "posteriors": posteriors,
-                "predicted": predicted
-            }
-        }
-        return response
-
+        csv_path = find_dataset_path(dataset_id)
+        df = read_tabular_file(csv_path)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=f"Error loading dataset: {str(e)}")
+
+    if target not in df.columns:
+        raise HTTPException(status_code=400, detail=f"Target column '{target}' not found in dataset")
+
+    dataset_preview = df.head(5).to_dict(orient="records")
+
+    # --- Step 1: Priors ---
+    priors = df[target].value_counts(normalize=True).to_dict()
+    step1 = {
+        "step": 1,
+        "title": "Compute Prior Probabilities",
+        "result": {"priors": priors},
+        "description": "Calculate P(Class) = count(Class)/N"
+    }
+
+    # --- Step 2: Conditional Probabilities ---
+    likelihoods = defaultdict(dict)
+    for feature in df.columns:
+        if feature == target:
+            continue
+        for cls in df[target].unique():
+            subset = df[df[target] == cls]
+            probs = subset[feature].value_counts(normalize=True).to_dict()
+            # Ensure all features have at least an empty dict for uniform access
+            likelihoods[cls][feature] = probs
+
+    step2 = {
+        "step": 2,
+        "title": "Compute Conditional Probabilities",
+        "result": {"details": likelihoods},
+        "description": "For each class and feature, compute P(Feature|Class)"
+    }
+
+    # --- Step 3: Compute Unnormalized Posteriors ---
+    per_class = {}
+    for cls in df[target].unique():
+        prior = priors[cls]
+        prob = prior
+        multipliers = []
+        for feature, value in example.items():
+            cond_probs = likelihoods[cls].get(feature, {})
+            p = cond_probs.get(value, 1e-6)  # Laplace smoothing
+            prob *= p
+            multipliers.append({"feature": feature, "value": value, "p": round(p, 6)})
+        per_class[cls] = {
+            "unnormalized": round(prob, 8),
+            "multipliers": multipliers
+        }
+
+    step3 = {
+        "step": 3,
+        "title": "Calculate Unnormalized Posterior",
+        "result": {"per_class": per_class},
+        "description": "Multiply priors and conditionals for each class"
+    }
+
+    # --- Step 4: Normalize ---
+    total = sum(v["unnormalized"] for v in per_class.values())
+    if total == 0:
+        raise HTTPException(status_code=400, detail="Total probability is zero — check dataset or example values.")
+
+    posteriors = {cls: round(v["unnormalized"] / total, 8) for cls, v in per_class.items()}
+    step4 = {
+        "step": 4,
+        "title": "Normalize to Get Posterior Probabilities",
+        "vars": {"evidence": round(total, 8)},
+        "result": {"posteriors": posteriors},
+        "description": "Normalize so all class probabilities sum to 1"
+    }
+
+    # --- Step 5: Final Prediction ---
+    predicted = max(posteriors, key=posteriors.get)
+    confidence = posteriors[predicted]
+    step5 = {
+        "step": 5,
+        "title": "Make Final Prediction",
+        "result": {"predicted": predicted, "confidence": round(confidence, 8)},
+        "description": "Choose the class with the highest posterior probability"
+    }
+
+    # --- Final Response ---
+    return {
+        "dataset_preview": dataset_preview,
+        "steps": [step1, step2, step3, step4, step5]
+    }
