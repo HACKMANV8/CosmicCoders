@@ -125,19 +125,26 @@ const LinearRegressionSteps = () => {
     if (active && payload && payload.length) {
       const data = payload[0].payload;
       return (
-        <div className="bg-white/95 border border-gray-300 rounded-lg p-3 shadow-lg">
-          <p className="font-semibold text-gray-800">
-            {metadata?.feature_column || 'X'}: {label}
+        <div className="bg-linear-to-br from-white/95 to-white/90 backdrop-blur-lg border border-white/30 rounded-xl p-4 shadow-2xl ring-1 ring-black/5">
+          <p className="font-bold text-gray-800 text-sm mb-2">
+            {metadata?.feature_column || 'X'}: <span className="text-blue-600">{label}</span>
           </p>
-          <p className="text-blue-600">
-            Actual {metadata?.target_column || 'Y'}: {data.y_actual.toFixed(2)}
-          </p>
-          <p className="text-green-600">
-            Predicted {metadata?.target_column || 'Y'}: {data.y_predicted.toFixed(2)}
-          </p>
-          <p className="text-gray-600 text-sm">
-            Error: {Math.abs(data.y_actual - data.y_predicted).toFixed(2)}
-          </p>
+          <div className="space-y-1 text-sm">
+            <p className="flex justify-between items-center">
+              <span className="text-gray-700">Actual {metadata?.target_column || 'Y'}:</span>
+              <span className="font-semibold text-blue-600">{data.y_actual.toFixed(2)}</span>
+            </p>
+            <p className="flex justify-between items-center">
+              <span className="text-gray-700">Predicted {metadata?.target_column || 'Y'}:</span>
+              <span className="font-semibold text-green-600">{data.y_predicted.toFixed(2)}</span>
+            </p>
+            <div className="border-t border-gray-200 pt-1 mt-2">
+              <p className="flex justify-between items-center text-xs">
+                <span className="text-gray-600">Error:</span>
+                <span className="font-medium text-red-500">{Math.abs(data.y_actual - data.y_predicted).toFixed(2)}</span>
+              </p>
+            </div>
+          </div>
         </div>
       );
     }
@@ -145,74 +152,108 @@ const LinearRegressionSteps = () => {
   };
 
   // Render interactive chart
-  const RegressionChart = () => {
-    if (!chartData.length || !metadata) return null;
+  const RegressionChart = ({ isInStep = false }) => {
+    if (!chartData.length || !metadata) {
+      return null;
+    }
+
+    const containerClass = isInStep 
+      ? "bg-linear-to-br from-white/5 to-white/10 backdrop-blur-md rounded-xl p-4 border border-white/20 shadow-2xl"
+      : "bg-linear-to-br from-white/10 to-white/5 backdrop-blur-sm rounded-2xl p-6 mb-6 shadow-xl ring-1 ring-white/20";
 
     return (
-      <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 mb-6 shadow-xl ring-1 ring-white/10">
-        <h2 className="text-xl font-bold text-white mb-4">📈 Interactive Regression Chart</h2>
-        <div className="bg-white/5 rounded-xl p-4">
-          <ResponsiveContainer width="100%" height={400}>
+      <div className={containerClass}>
+        {!isInStep && (
+          <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+            <span className="text-2xl">📈</span>
+            Interactive Regression Chart
+          </h2>
+        )}
+        <div className="bg-white/10 rounded-xl p-4 border border-white/20">
+          <ResponsiveContainer width="100%" height={isInStep ? 280 : 400}>
             <ScatterChart data={chartData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#ffffff20" />
+              <CartesianGrid 
+                strokeDasharray="3 3" 
+                stroke="rgba(100,116,139,0.3)" 
+                strokeWidth={1}
+              />
               <XAxis 
                 dataKey="x" 
                 type="number" 
                 domain={['dataMin - 0.5', 'dataMax + 0.5']}
-                tick={{ fill: '#ffffff80', fontSize: 12 }}
+                tick={{ fill: '#374151', fontSize: 11, fontWeight: 500 }}
+                axisLine={{ stroke: 'rgba(100,116,139,0.4)', strokeWidth: 1 }}
+                tickLine={{ stroke: 'rgba(100,116,139,0.4)', strokeWidth: 1 }}
                 label={{ 
                   value: metadata.feature_column, 
                   position: 'insideBottom', 
-                  offset: -10,
-                  style: { textAnchor: 'middle', fill: '#ffffff80' }
+                  offset: -8,
+                  style: { 
+                    textAnchor: 'middle', 
+                    fill: '#374151', 
+                    fontWeight: 600,
+                    fontSize: 12
+                  }
                 }}
               />
               <YAxis 
-                tick={{ fill: '#ffffff80', fontSize: 12 }}
+                tick={{ fill: '#374151', fontSize: 11, fontWeight: 500 }}
+                axisLine={{ stroke: 'rgba(100,116,139,0.4)', strokeWidth: 1 }}
+                tickLine={{ stroke: 'rgba(100,116,139,0.4)', strokeWidth: 1 }}
                 label={{ 
                   value: metadata.target_column, 
                   angle: -90, 
                   position: 'insideLeft',
-                  style: { textAnchor: 'middle', fill: '#ffffff80' }
+                  style: { 
+                    textAnchor: 'middle', 
+                    fill: '#374151',
+                    fontWeight: 600,
+                    fontSize: 12
+                  }
                 }}
               />
               <Tooltip content={<CustomTooltip />} />
-              <Legend wrapperStyle={{ color: '#ffffff80' }} />
               
-              {/* Actual data points */}
+              {/* Actual data points with glow effect */}
               <Scatter 
                 name="Actual Data" 
                 dataKey="y_actual" 
-                fill="#3b82f6"
-                r={4}
+                fill="#60a5fa"
+                stroke="#3b82f6"
+                strokeWidth={2}
+                r={6}
               />
               
               {/* Predicted values - regression line */}
               <Scatter 
                 name="Regression Line" 
                 dataKey="y_predicted" 
-                fill="#10b981"
-                r={2}
+                fill="#34d399"
+                stroke="#10b981"
+                strokeWidth={2}
+                r={3}
                 shape="diamond"
               />
             </ScatterChart>
           </ResponsiveContainer>
         </div>
         
-        <div className="mt-4 text-center">
-          <div className="flex justify-center items-center gap-6 text-sm text-white/80">
+        <div className="mt-3 text-center">
+          <div className="flex justify-center items-center gap-6 text-xs text-white/90 font-medium">
             <div className="flex items-center gap-2">
-              <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-              <span>Actual Data Points</span>
+              <div className="w-3 h-3 bg-blue-400 rounded-full shadow-lg border border-blue-300"></div>
+              <span>Actual Data</span>
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-3 h-3 bg-green-500" style={{clipPath: 'polygon(50% 0%, 0% 100%, 100% 100%)'}}></div>
-              <span>Predicted Values (Regression Line)</span>
+              <div className="w-3 h-3 bg-green-400 transform rotate-45 shadow-lg border border-green-300"></div>
+              <span>Predicted</span>
             </div>
           </div>
-          <p className="text-white/60 text-xs mt-2">
-            Hover over points to see actual vs predicted values and prediction error
-          </p>
+          {!isInStep && (
+            <p className="text-white/70 text-xs mt-2">
+              Hover over points to see actual vs predicted values and prediction error
+            </p>
+          )}
         </div>
       </div>
     );
@@ -327,23 +368,50 @@ const LinearRegressionSteps = () => {
           </div>
         )}
 
-        {/* Interactive Chart - Show when viewing all steps or after step 4 */}
-        {(showAllSteps || currentStep >= 3) && <RegressionChart />}
+        {/* Chart is now integrated into steps 4, 5, 6 - no separate chart section needed */}
 
         {/* Steps - Show all or current step */}
         <div className="space-y-6">
           {showAllSteps ? (
             // Show all steps
             steps.map((step, idx) => (
-              <div key={idx} className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 shadow-xl ring-1 ring-white/10 text-left">
-                {renderStepContent(step, idx)}
+              <div key={idx} className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 shadow-xl ring-1 ring-white/10">
+                {/* For steps 4, 5, 6 show side-by-side layout with chart */}
+                {(step.step_number >= 4) ? (
+                  <div className="grid lg:grid-cols-2 gap-6 items-start">
+                    <div className="text-left">
+                      {renderStepContent(step, idx)}
+                    </div>
+                    <div className="lg:sticky lg:top-6">
+                      <RegressionChart isInStep={true} />
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-left">
+                    {renderStepContent(step, idx)}
+                  </div>
+                )}
               </div>
             ))
           ) : (
             // Show current step only
             steps.length > 0 && (
-              <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 shadow-xl ring-1 ring-white/10 text-left transform transition-all duration-300 scale-105">
-                {renderStepContent(steps[currentStep], currentStep)}
+              <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 shadow-xl ring-1 ring-white/10 transform transition-all duration-300 scale-105">
+                {/* For steps 4, 5, 6 show side-by-side layout with chart */}
+                {(steps[currentStep].step_number >= 4) ? (
+                  <div className="grid lg:grid-cols-2 gap-6 items-start">
+                    <div className="text-left">
+                      {renderStepContent(steps[currentStep], currentStep)}
+                    </div>
+                    <div className="lg:sticky lg:top-6">
+                      <RegressionChart isInStep={true} />
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-left">
+                    {renderStepContent(steps[currentStep], currentStep)}
+                  </div>
+                )}
               </div>
             )
           )}

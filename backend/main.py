@@ -306,5 +306,7 @@ async def simple_linear_regression(req: LinearRegressionRequest = Body(...)):
         "dataset_id": req.dataset_id,
         "steps": result["steps"],
         "summary": result.get("summary"),
+        "chart_data": result.get("chart_data"),
+        "metadata": result.get("metadata"),
     })
 
