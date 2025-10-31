@@ -118,6 +118,8 @@ function Home() {
     } 
     else if (algo.toLowerCase() === "knn_regression") {
       navigate("/knnRegression");
+    else if(algo.toLowerCase() === "support vector regression"){
+        navigate("/svr");
     }
     else if (
       algo.toLowerCase() === "id3" 

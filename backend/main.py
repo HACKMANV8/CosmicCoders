@@ -8,12 +8,7 @@ import pandas as pd
 from fastapi import HTTPException
 import json
 import os
-import re
-import io
-import uuid
-import shutil
-from collections import defaultdict
-
+from svr import run_svr
 import glob
 from linear_regression import run_linear_regression
 from id3 import compute_id3_root_steps
@@ -134,18 +129,7 @@ async def upload_and_analyze_dataset(
             resp["label_preview"] = label_peek(df[target])
             resp["suggested_algorithms"] = ["id3", "naive_bayes", "knn"]
         elif info["inferred"] == "regression":
-            resp["suggested_algorithms"] = ["linear_regression", "knn_regression"]
-            
-            # Automatically run algorithm comparison for regression
-            try:
-                comparison_result = compare_regression_algorithms(df, target_col=target)
-                if comparison_result["status"] == "success":
-                    resp["algorithm_comparison"] = comparison_result
-                    resp["best_algorithm"] = comparison_result["best_algorithm"]
-                else:
-                    resp["algorithm_comparison_error"] = comparison_result.get("error", "Unknown error")
-            except Exception as e:
-                resp["algorithm_comparison_error"] = str(e)
+            resp["suggested_algorithms"] = ["cart_regression","support vector regression", "linear_regression"]
         else:
             resp["suggested_algorithms"] = []
 
@@ -323,4 +307,73 @@ async def compare_algorithms(req: AlgorithmComparisonRequest = Body(...)):
         })
         
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Comparison failed: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+
+class SVRRequest(BaseModel):
+    dataset_id: str
+    params: Optional[Dict[str, Any]] = None
+
+
+
+@app.post("/supportvectorregression")
+async def support_vector_regression(req: SVRRequest = Body(...)):
+    """
+    Runs Support Vector Regression on a dataset and returns
+    a step-by-step breakdown of the conceptual calculations.
+    """
+    
+    # 1. Find and read the dataset
+    
+    # Assign csv_path *before* the try block to ensure it's bound in the
+    # FileNotFoundError except block.
+    # We assume find_dataset_path will either return a string or
+    # raise its own exception (which we'd catch below if it's not FileNotFoundError).
+    try:
+        csv_path = find_dataset_path(req.dataset_id)
+    except Exception as e:
+        # Handle cases where find_dataset_path itself fails
+        raise HTTPException(status_code=404, detail=f"Failed to find dataset path for ID '{req.dataset_id}': {e}")
+    
+    try:
+        df = pd.read_csv(csv_path)
+    except FileNotFoundError:
+        # This block is now safe because csv_path is guaranteed to be assigned.
+        raise HTTPException(status_code=404, detail=f"Dataset with ID '{req.dataset_id}' not found at path: {csv_path}")
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Failed to read dataset from path {csv_path}: {e}")
+
+    # 2. Get parameters or use defaults
+    params = req.params or {}
+
+    # 3. Call the SVR function (from svr_calculator.py)
+    try:
+        result = run_svr(df, params)
+    except Exception as e:
+        # Catch errors from the calculation function
+        raise HTTPException(status_code=500, detail=f"Error during SVR calculation: {e}")
+
+    # 4. Generate a unique ID for this run
+    run_id = uuid.uuid4().hex
+    
+    # 5. Inject run_id and step_id into each step for tracking
+    for i, s in enumerate(result["steps"], start=1):
+        s["run_id"] = run_id
+        s["step_id"] = i
+
+    # 6. Return the structured JSON response
+    return JSONResponse({
+        "run_id": run_id,
+        "algorithm": "support_vector_regression",  # Set algorithm name
+        "dataset_id": req.dataset_id,
+        "steps": result["steps"],
+        
+        # Following your LR endpoint pattern.
+        # run_svr() doesn't return a top-level 'summary' key,
+        # so this will be None. The key data is in 'metadata'.
+        "summary": result.get("summary"),
+        
+        "chart_data": result.get("chart_data"),
+        "metadata": result.get("metadata"),
+    })
