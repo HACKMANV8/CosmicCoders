@@ -11,6 +11,8 @@ function Home() {
   const [problemType, setProblemType] = useState("");
   const [suggestedAlgorithms, setSuggestedAlgorithms] = useState([]);
   const [datasetId, setDatasetId] = useState("");
+  const [algorithmComparison, setAlgorithmComparison] = useState(null);
+  const [bestAlgorithm, setBestAlgorithm] = useState("");
 
   // ✅ Handle file selection
   const handlePick = (e) => {
@@ -18,6 +20,8 @@ function Home() {
     setUploadSuccess(false);
     setProblemType("");
     setSuggestedAlgorithms([]);
+    setAlgorithmComparison(null);
+    setBestAlgorithm("");
     const f = e.target.files?.[0];
     if (!f) return;
 
@@ -47,6 +51,8 @@ function Home() {
     setUploadSuccess(false);
     setProblemType("");
     setSuggestedAlgorithms([]);
+    setAlgorithmComparison(null);
+    setBestAlgorithm("");
 
     try {
       const response = await fetch("http://localhost:8000/datasets", {
@@ -72,6 +78,15 @@ function Home() {
       // ✅ Store algorithms from backend
       if (result.suggested_algorithms) {
         setSuggestedAlgorithms(result.suggested_algorithms);
+      }
+
+      // ✅ Store algorithm comparison results for regression
+      if (result.algorithm_comparison) {
+        setAlgorithmComparison(result.algorithm_comparison);
+      }
+      
+      if (result.best_algorithm) {
+        setBestAlgorithm(result.best_algorithm);
       }
 
       // ✅ Detect problem type
@@ -191,15 +206,28 @@ function Home() {
               Suggested Algorithms:
             </h3>
             <div className="flex flex-wrap justify-center gap-3">
-              {suggestedAlgorithms.map((algo, index) => (
-                <button
-                  key={index}
-                  onClick={() => handleAlgorithmSelect(algo)}
-                  className="px-5 py-2 rounded-full bg-white/90 text-slate-900 font-medium shadow-md hover:bg-white transition hover:scale-105"
-                >
-                  {algo.toUpperCase()}
-                </button>
-              ))}
+              {suggestedAlgorithms.map((algo, index) => {
+                // Find accuracy for this algorithm
+                const algoData = algorithmComparison?.algorithms?.find(a => 
+                  a.algorithm.toLowerCase().replace(/\s+/g, '_') === algo.toLowerCase()
+                );
+                const accuracy = algoData?.metrics?.accuracy_percentage;
+                
+                return (
+                  <button
+                    key={index}
+                    onClick={() => handleAlgorithmSelect(algo)}
+                    className="px-5 py-2 rounded-full bg-white/90 text-slate-900 font-medium shadow-md hover:bg-white transition hover:scale-105 flex flex-col items-center gap-1"
+                  >
+                    <span>{algo.toUpperCase()}</span>
+                    {accuracy !== undefined && (
+                      <span className="text-xs font-bold text-emerald-600">
+                        {accuracy.toFixed(1)}% accuracy
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
             </div>
           </div>
         )}

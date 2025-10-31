@@ -5,19 +5,20 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from pathlib import Path
 import pandas as pd
-<<<<<<< HEAD
 from fastapi import HTTPException
 import json
 import os
+import re
+import io
+import uuid
+import shutil
+from collections import defaultdict
 
 import glob
 from linear_regression import run_linear_regression
 from id3 import compute_id3_root_steps
 from knn_regression import run_knn_regression
-=======
-import uuid, shutil, io, math, glob, os, re
-from collections import defaultdict
->>>>>>> b29ddb32a447b40d061887436a05bc6e12d5f7fe
+from algorithm_comparison import compare_regression_algorithms
 from pandas.api.types import (
     is_bool_dtype,
     is_object_dtype,
@@ -133,13 +134,20 @@ async def upload_and_analyze_dataset(
             resp["label_preview"] = label_peek(df[target])
             resp["suggested_algorithms"] = ["id3", "naive_bayes", "knn"]
         elif info["inferred"] == "regression":
-<<<<<<< HEAD
             resp["suggested_algorithms"] = ["linear_regression", "knn_regression"]
+            
+            # Automatically run algorithm comparison for regression
+            try:
+                comparison_result = compare_regression_algorithms(df, target_col=target)
+                if comparison_result["status"] == "success":
+                    resp["algorithm_comparison"] = comparison_result
+                    resp["best_algorithm"] = comparison_result["best_algorithm"]
+                else:
+                    resp["algorithm_comparison_error"] = comparison_result.get("error", "Unknown error")
+            except Exception as e:
+                resp["algorithm_comparison_error"] = str(e)
         else:
             resp["suggested_algorithms"] = []
-=======
-            resp["suggested_algorithms"] = ["linear_regression"]
->>>>>>> b29ddb32a447b40d061887436a05bc6e12d5f7fe
 
     return JSONResponse(resp, status_code=201)
 
@@ -190,7 +198,6 @@ async def simple_linear_regression(req: LinearRegressionRequest = Body(...)):
         "summary": result.get("summary"),
     }
 
-<<<<<<< HEAD
 class KNNRegressionRequest(BaseModel):
     dataset_id: str
     params: Optional[Dict[str, Any]] = None
@@ -223,11 +230,6 @@ async def knn_regression(req: KNNRegressionRequest = Body(...)):
     })
 
 
-=======
-# -----------------------------------------------------------
-# NAIVE BAYES ALGORITHM (final integrated working version)
-# -----------------------------------------------------------
->>>>>>> b29ddb32a447b40d061887436a05bc6e12d5f7fe
 @app.post("/naivebayes")
 async def naive_bayes(request: Request):
     body = await request.json()
@@ -283,3 +285,42 @@ async def naive_bayes(request: Request):
     steps.append({"step": 5, "title": "Final Prediction", "result": {"predicted": predicted, "confidence": confidence}})
 
     return {"dataset_preview": df.head(5).to_dict(orient="records"), "steps": steps}
+
+# -----------------------------------------------------------
+# Algorithm Comparison for Regression
+# -----------------------------------------------------------
+class AlgorithmComparisonRequest(BaseModel):
+    dataset_id: str
+    params: Optional[Dict[str, Any]] = None
+
+@app.post("/compare-regression-algorithms")
+async def compare_algorithms(req: AlgorithmComparisonRequest = Body(...)):
+    """
+    Compare all available regression algorithms and return accuracy metrics
+    """
+    try:
+        csv_path = find_dataset_path(req.dataset_id)
+        df = read_tabular_file(csv_path)
+        
+        params = req.params or {}
+        feature_cols = params.get("features")
+        target_col = params.get("target")
+        test_size = params.get("test_size", 0.2)
+        random_state = params.get("random_state", 42)
+        
+        result = compare_regression_algorithms(
+            df, 
+            feature_cols=feature_cols, 
+            target_col=target_col,
+            test_size=test_size,
+            random_state=random_state
+        )
+        
+        return JSONResponse({
+            "dataset_id": req.dataset_id,
+            "comparison_result": result,
+            "timestamp": pd.Timestamp.now().isoformat()
+        })
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Comparison failed: {str(e)}")

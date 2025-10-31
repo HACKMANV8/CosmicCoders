@@ -901,20 +901,20 @@ function GainFeatureBreakdown({ step }) {
                   <div className="text-sm text-white/70 mb-2">
                     Value: <span className="font-mono text-blue-300">{String(p.value)}</span>
                   </div>
-                  <div className="text-sm">
-                    Samples: <span className="font-mono">{p.size}</span> | 
-                    Weight: <span className="font-mono">{round(p.weight, 3)}</span>
+                  <div className="text-sm text-white/80">
+                    Samples: <span className="font-mono text-green-300">{p.size}</span> | 
+                    Weight: <span className="font-mono text-green-300">{round(p.weight, 3)}</span>
                   </div>
-                  <div className="text-sm mt-1">
-                    Classes: {Object.entries(p.class_counts)
+                  <div className="text-sm mt-1 text-white/80">
+                    Classes: <span className="font-mono text-blue-300">{Object.entries(p.class_counts)
                       .map(([k, v]) => `${k}:${v}`)
-                      .join(", ")}
+                      .join(", ")}</span>
                   </div>
                 </div>
                 <div>
                   <div className="text-sm text-white/70 mb-1">Entropy Calculation:</div>
                   <div className="bg-white/5 rounded-lg p-2">
-                    <div className="text-xs font-mono">
+                    <div className="text-xs font-mono text-white/80">
                       {Array.isArray(p.p_terms)
                         ? p.p_terms.map((t) => `p(${t.class})=${round(t.p, 3)}`).join(", ")
                         : "—"}
