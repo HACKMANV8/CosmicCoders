@@ -22,7 +22,7 @@ const LinearRegressionSteps = () => {
       }
 
       try {
-        const response = await fetch("http://localhost:8000/calculation", {
+        const response = await fetch("http://localhost:8000/simplelinearregression", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
