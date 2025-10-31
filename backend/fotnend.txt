@@ -19,11 +19,11 @@ export default function NaiveBayesPage() {
   const [target, setTarget] = useState("");
   const [columns, setColumns] = useState([]);
   const [example, setExample] = useState({});
-  const [result, setResult] = useState({ steps: [] });
+  const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState("");
 
-  // Load dataset info
+  // Load dataset info from localStorage
   useEffect(() => {
     const id = localStorage.getItem("datasetid") || "";
     setDatasetId(id);
@@ -37,7 +37,7 @@ export default function NaiveBayesPage() {
     }
   }, []);
 
-  // Set default target
+  // Set last column as target by default
   useEffect(() => {
     if (columns.length > 0) {
       setTarget(columns[columns.length - 1]);
@@ -47,15 +47,17 @@ export default function NaiveBayesPage() {
     }
   }, [columns]);
 
+  // Handle user input for example
   const handleExampleChange = (col, value) => {
     setExample((prev) => ({ ...prev, [col]: value }));
   };
 
+  // Run Naive Bayes
   async function runNB() {
     try {
       setErr("");
       setLoading(true);
-      setResult({ steps: [] });
+      setResult(null);
 
       const body = {
         dataset_id: datasetId,
@@ -82,6 +84,7 @@ export default function NaiveBayesPage() {
   return (
     <main className="min-h-screen bg-gradient-to-br from-slate-900 via-indigo-900 to-emerald-900 text-white p-6">
       <div className="max-w-6xl mx-auto space-y-6">
+        {/* Header */}
         <div className="flex justify-between items-center">
           <h1 className="text-2xl font-extrabold">
             Naïve Bayes — Full Step-by-Step Calculation
@@ -95,12 +98,14 @@ export default function NaiveBayesPage() {
           </button>
         </div>
 
+        {/* Error Display */}
         {err && (
           <Card>
             <div className="text-red-400">{err}</div>
           </Card>
         )}
 
+        {/* Example Input */}
         {columns.length > 0 && (
           <Card title="Enter Feature Values">
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
@@ -126,10 +131,11 @@ export default function NaiveBayesPage() {
           </Card>
         )}
 
-        {/* --- Results Display --- */}
-        {result?.steps?.length > 0 && (
+        {/* Results Display */}
+        {result && (
           <>
-            {result?.dataset_preview && (
+            {/* Dataset Preview */}
+            {result.dataset_preview && (
               <Card title="Dataset Preview">
                 <div className="overflow-x-auto">
                   <table className="min-w-full text-sm">
@@ -160,43 +166,46 @@ export default function NaiveBayesPage() {
               </Card>
             )}
 
+            {/* Step-by-step Breakdown */}
             {result.steps.map((step, idx) => (
               <Card key={idx} title={`Step ${step.step}: ${step.title}`}>
+                {/* Step 1 — Priors */}
                 {step.step === 1 && step.result?.priors && (
                   <div className="space-y-2">
                     {Object.entries(step.result.priors).map(([cls, p]) => (
                       <div key={cls}>
                         <InlineMath
-                          math={`P(${cls}) = \\frac{count(${cls})}{N} = ${round(p)}`}
+                          math={`P(${cls}) = \\frac{count(${cls})}{N} = ${p}`}
                         />
                       </div>
                     ))}
                   </div>
                 )}
 
-                {step.step === 2 && step.result?.details && (
+                {/* Step 2 — Conditionals */}
+                {step.step === 2 && (
                   <div className="space-y-3">
-                    {Object.entries(step.result.details).map(([cls, features]) => (
-                      <div key={cls}>
+                    {step.result.details.classes.map((c, i) => (
+                      <div key={i}>
                         <div className="font-semibold text-emerald-300">
-                          Class: {cls}
+                          Class: {c.class}
                         </div>
-                        {Object.entries(features).map(([feature, values]) => (
-                          <div key={feature} className="pl-4">
-                            <div className="text-white/70">{feature}</div>
-                            {Object.entries(values).map(([val, prob]) => (
-                              <div key={val} className="pl-4">
-                                <InlineMath math={`P(${feature}=${val}|${cls})=${round(prob,4)}`} />
-                              </div>
-                            ))}
-                          </div>
-                        ))}
+                        {Object.entries(c.conditional_probs).map(
+                          ([val, prob]) => (
+                            <div key={val} className="pl-4">
+                              <InlineMath
+                                math={`P(${c.feature}=${val}|${c.class}) = ${prob}`}
+                              />
+                            </div>
+                          )
+                        )}
                       </div>
                     ))}
                   </div>
                 )}
 
-                {step.step === 3 && step.result?.per_class && (
+                {/* Step 3 — Unnormalized Posterior */}
+                {step.step === 3 && (
                   <div className="space-y-2">
                     {Object.entries(step.result.per_class).map(([cls, v]) => (
                       <div key={cls}>
@@ -212,20 +221,26 @@ export default function NaiveBayesPage() {
                   </div>
                 )}
 
-                {step.step === 4 && step.result?.posteriors && (
+                {/* Step 4 — Normalization */}
+                {step.step === 4 && (
                   <div className="space-y-2">
                     <InlineMath
-                      math={`Evidence = ${round(step.vars?.evidence || 0, 8)}`}
+                      math={`Evidence = ${round(step.vars.evidence, 8)}`}
                     />
-                    {Object.entries(step.result.posteriors).map(([cls, val]) => (
-                      <div key={cls}>
-                        <InlineMath math={`P(${cls}|X) = ${round(val, 8)}`} />
-                      </div>
-                    ))}
+                    {Object.entries(step.result.posteriors).map(
+                      ([cls, val]) => (
+                        <div key={cls}>
+                          <InlineMath
+                            math={`P(${cls}|X) = ${round(val, 8)}`}
+                          />
+                        </div>
+                      )
+                    )}
                   </div>
                 )}
 
-                {step.step === 5 && step.result?.predicted && (
+                {/* Step 5 — Final Prediction */}
+                {step.step === 5 && (
                   <div className="space-y-2 text-lg">
                     <div>
                       <span className="text-emerald-300 font-mono">

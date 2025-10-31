@@ -142,7 +142,7 @@ function Home() {
                 disabled={isLoading}
                 className="inline-flex items-center justify-center rounded-full bg-emerald-600 text-white font-semibold px-8 py-3 shadow-xl ring-1 ring-black/10 transition hover:scale-[1.02] hover:shadow-2xl active:scale-100 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {isLoading ? "Uploading..." : "Send to Backend"}
+                {isLoading ? "Uploading..." : "Process data"}
               </button>
             </div>
           )}
