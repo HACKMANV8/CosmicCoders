@@ -77,6 +77,17 @@ def run_linear_regression(df, params):
     sample_y_actual = [y[i] for i in sample_indices if i < len(y)]
     sample_y_pred = [y_pred[i] for i in sample_indices if i < len(y_pred)]
 
+    # Prepare chart data - all data points for visualization
+    chart_data = [
+        {
+            "x": float(x[i]),
+            "y_actual": float(y[i]),
+            "y_predicted": float(y_pred[i]),
+            "index": i
+        }
+        for i in range(len(x))
+    ]
+
     return {
         "steps": [
             {
@@ -146,5 +157,14 @@ def run_linear_regression(df, params):
                     "dataset_size": n
                 }
             }
-        ]
+        ],
+        "chart_data": chart_data,
+        "metadata": {
+            "feature_column": feature_col,
+            "target_column": target_col,
+            "equation": f"{target_col} = {slope:.3f} × {feature_col} + {intercept:.3f}",
+            "slope": float(slope),
+            "intercept": float(intercept),
+            "r2_score": float(r2)
+        }
     }

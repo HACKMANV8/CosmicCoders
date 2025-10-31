@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { BlockMath, InlineMath } from "react-katex";
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ScatterChart, Scatter, Cell } from 'recharts';
 import "katex/dist/katex.min.css";
 
 const LinearRegressionSteps = () => {
@@ -9,6 +10,8 @@ const LinearRegressionSteps = () => {
   const [error, setError] = useState("");
   const [currentStep, setCurrentStep] = useState(0);
   const [showAllSteps, setShowAllSteps] = useState(false);
+  const [chartData, setChartData] = useState([]);
+  const [metadata, setMetadata] = useState(null);
 
   useEffect(() => {
     async function fetchCalculation() {
@@ -42,6 +45,16 @@ const LinearRegressionSteps = () => {
         // Extract steps from the response
         if (result.steps && result.steps.length > 0) {
           setSteps(result.steps);
+          
+          // Set chart data
+          if (result.chart_data) {
+            setChartData(result.chart_data);
+          }
+          
+          // Set metadata
+          if (result.metadata) {
+            setMetadata(result.metadata);
+          }
           
           // Extract summary from the last step or create from steps
           const lastStep = result.steps[result.steps.length - 1];
@@ -105,6 +118,104 @@ const LinearRegressionSteps = () => {
 
   const toggleViewMode = () => {
     setShowAllSteps(!showAllSteps);
+  };
+
+  // Custom tooltip for the chart
+  const CustomTooltip = ({ active, payload, label }) => {
+    if (active && payload && payload.length) {
+      const data = payload[0].payload;
+      return (
+        <div className="bg-white/95 border border-gray-300 rounded-lg p-3 shadow-lg">
+          <p className="font-semibold text-gray-800">
+            {metadata?.feature_column || 'X'}: {label}
+          </p>
+          <p className="text-blue-600">
+            Actual {metadata?.target_column || 'Y'}: {data.y_actual.toFixed(2)}
+          </p>
+          <p className="text-green-600">
+            Predicted {metadata?.target_column || 'Y'}: {data.y_predicted.toFixed(2)}
+          </p>
+          <p className="text-gray-600 text-sm">
+            Error: {Math.abs(data.y_actual - data.y_predicted).toFixed(2)}
+          </p>
+        </div>
+      );
+    }
+    return null;
+  };
+
+  // Render interactive chart
+  const RegressionChart = () => {
+    if (!chartData.length || !metadata) return null;
+
+    return (
+      <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 mb-6 shadow-xl ring-1 ring-white/10">
+        <h2 className="text-xl font-bold text-white mb-4">📈 Interactive Regression Chart</h2>
+        <div className="bg-white/5 rounded-xl p-4">
+          <ResponsiveContainer width="100%" height={400}>
+            <ScatterChart data={chartData}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#ffffff20" />
+              <XAxis 
+                dataKey="x" 
+                type="number" 
+                domain={['dataMin - 0.5', 'dataMax + 0.5']}
+                tick={{ fill: '#ffffff80', fontSize: 12 }}
+                label={{ 
+                  value: metadata.feature_column, 
+                  position: 'insideBottom', 
+                  offset: -10,
+                  style: { textAnchor: 'middle', fill: '#ffffff80' }
+                }}
+              />
+              <YAxis 
+                tick={{ fill: '#ffffff80', fontSize: 12 }}
+                label={{ 
+                  value: metadata.target_column, 
+                  angle: -90, 
+                  position: 'insideLeft',
+                  style: { textAnchor: 'middle', fill: '#ffffff80' }
+                }}
+              />
+              <Tooltip content={<CustomTooltip />} />
+              <Legend wrapperStyle={{ color: '#ffffff80' }} />
+              
+              {/* Actual data points */}
+              <Scatter 
+                name="Actual Data" 
+                dataKey="y_actual" 
+                fill="#3b82f6"
+                r={4}
+              />
+              
+              {/* Predicted values - regression line */}
+              <Scatter 
+                name="Regression Line" 
+                dataKey="y_predicted" 
+                fill="#10b981"
+                r={2}
+                shape="diamond"
+              />
+            </ScatterChart>
+          </ResponsiveContainer>
+        </div>
+        
+        <div className="mt-4 text-center">
+          <div className="flex justify-center items-center gap-6 text-sm text-white/80">
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+              <span>Actual Data Points</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 bg-green-500" style={{clipPath: 'polygon(50% 0%, 0% 100%, 100% 100%)'}}></div>
+              <span>Predicted Values (Regression Line)</span>
+            </div>
+          </div>
+          <p className="text-white/60 text-xs mt-2">
+            Hover over points to see actual vs predicted values and prediction error
+          </p>
+        </div>
+      </div>
+    );
   };
 
   if (loading) {
@@ -215,6 +326,9 @@ const LinearRegressionSteps = () => {
             </div>
           </div>
         )}
+
+        {/* Interactive Chart - Show when viewing all steps or after step 4 */}
+        {(showAllSteps || currentStep >= 3) && <RegressionChart />}
 
         {/* Steps - Show all or current step */}
         <div className="space-y-6">
