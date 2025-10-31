@@ -1,0 +1,959 @@
+[
+  {
+    "system": "You are a helpful AI advisor.",
+    "instruction": "What is a Decision Tree in machine learning?",
+    "input": "",
+    "output": "A Decision Tree is a supervised learning algorithm that splits data into branches based on feature values to make decisions. Each internal node represents a test on an attribute, each branch represents an outcome, and each leaf node represents a predicted class or value."
+  },
+  {
+    "system": "You are a helpful AI advisor.",
+    "instruction": "How does a Decision Tree make predictions?",
+    "input": "",
+    "output": "A Decision Tree makes predictions by following a path from the root to a leaf node based on feature conditions. At each node, it checks a rule (e.g., 'Age < 30'), follows the corresponding branch, and finally outputs the value at the leaf node."
+  },
+  {"system": "You are a helpful AI advisor.", "instruction": "Why was 'Outlook' chosen as the root feature?", "input": "", "output": "'Outlook' was chosen as the root feature because it had the highest Information Gain (0.24675). That means it provided the most significant reduction in entropy, making it the best feature to split the data at the root level."},
+{"system": "You are a helpful AI advisor.", "instruction": "What does H(S) = 0.940286 mean?", "input": "", "output": "H(S) = 0.940286 represents the entropy of the entire dataset before any splits. It measures the uncertainty or impurity of the class labels — here, a mix of 'Yes' and 'No' outcomes."},
+{"system": "You are a helpful AI advisor.", "instruction": "Why is entropy used to measure impurity?", "input": "", "output": "Entropy quantifies disorder in the data. The more mixed the classes, the higher the entropy. Decision Trees use it to decide where to split the data for maximum purity gain."},
+{"system": "You are a helpful AI advisor.", "instruction": "What does Gain(S, A) represent?", "input": "", "output": "Gain(S, A) represents the Information Gain when the dataset S is split using feature A. It measures how much uncertainty about the target variable is reduced by knowing the feature value."},
+{"system": "You are a helpful AI advisor.", "instruction": "Why is Information Gain highest for Outlook?", "input": "", "output": "The feature 'Outlook' creates splits that produce the purest subsets compared to others. Its weighted average entropy after splitting is lowest, giving the highest gain of 0.24675."},
+{"system": "You are a helpful AI advisor.", "instruction": "What do the probabilities p(c) = Yes=0.6429 and No=0.3571 mean?", "input": "", "output": "They represent the proportion of samples belonging to each class in the dataset. Here, 64.29% are 'Yes' and 35.71% are 'No'."},
+{"system": "You are a helpful AI advisor.", "instruction": "What does |Sᵥ| = 4 mean in this context?", "input": "", "output": "|Sᵥ| = 4 means that for that particular feature value (like 'Overcast'), there are 4 samples in the dataset belonging to that subset."},
+{"system": "You are a helpful AI advisor.", "instruction": "Why is H(Sᵥ) = 0 for Overcast?", "input": "", "output": "Because all samples under 'Overcast' have the same class label ('Yes'), there is no uncertainty. Hence, the entropy is 0, indicating perfect purity."},
+{"system": "You are a helpful AI advisor.", "instruction": "Why are entropy values like 0.970951 not exactly 1?", "input": "", "output": "Entropy reaches 1 only when the classes are perfectly balanced (50-50). Values like 0.970951 occur when there’s a slight imbalance in class proportions."},
+{"system": "You are a helpful AI advisor.", "instruction": "Why is Temperature's Information Gain so low?", "input": "", "output": "Temperature has a low Information Gain (0.029223) because its splits don’t significantly reduce the overall entropy. The resulting subsets remain fairly mixed between 'Yes' and 'No'."},
+{"system": "You are a helpful AI advisor.", "instruction": "What does 'Σ weight·H(Sᵥ)' mean?", "input": "", "output": "It represents the weighted average of entropies across all subsets created by a feature. Each subset’s entropy is weighted by the proportion of samples it contains."},
+{"system": "You are a helpful AI advisor.", "instruction": "Why does the system choose the feature with the highest Information Gain?", "input": "", "output": "Choosing the feature with the highest Information Gain ensures that each split maximally reduces uncertainty about the target variable, leading to a simpler and more accurate tree."},
+{"system": "You are a helpful AI advisor.", "instruction": "What does it mean when Gain(S, A) = 0?", "input": "", "output": "If Gain(S, A) = 0, splitting on that feature doesn’t reduce entropy at all — meaning the feature provides no information about the target variable."},
+{"system": "You are a helpful AI advisor.", "instruction": "Why does Windy have lower gain compared to Outlook?", "input": "", "output": "Because splitting by 'Windy' results in subsets that are still quite mixed, its weighted entropy remains high. Therefore, its Information Gain (0.048127) is smaller."},
+{"system": "You are a helpful AI advisor.", "instruction": "What is the meaning of 'Chosen root: Outlook'?", "input": "", "output": "It indicates that the Decision Tree algorithm selected 'Outlook' as the first split (root node) because it gives the best improvement in prediction purity."},
+{"system": "You are a helpful AI advisor.", "instruction": "What does the notation H(Sᵥ) signify?", "input": "", "output": "H(Sᵥ) denotes the entropy of a subset Sᵥ — the portion of the dataset corresponding to a particular value of the feature being tested."},
+{"system": "You are a helpful AI advisor.", "instruction": "Why does the entropy formula include a negative sign?", "input": "", "output": "The negative sign ensures that entropy values are non-negative because log(p) is negative when p < 1. It keeps entropy as a positive measure of uncertainty."},
+{"system": "You are a helpful AI advisor.", "instruction": "Why might Humidity still have a decent gain (0.151836)?", "input": "", "output": "Humidity provides a reasonable split between 'Yes' and 'No' classes. The subsets it creates are somewhat purer than others, resulting in moderate Information Gain."},
+{"system": "You are a helpful AI advisor.", "instruction": "What is the purpose of calculating entropy and gain for every feature?", "input": "", "output": "By comparing entropy and Information Gain for each feature, the Decision Tree algorithm determines which feature best separates the data at each step."},
+{"system": "You are a helpful AI advisor.", "instruction": "What does N = 14 indicate?", "input": "", "output": "N = 14 means there are 14 samples in the dataset being used to build the Decision Tree. It’s the total number of training instances at the root node."},
+
+  {
+    "system": "You are a helpful AI advisor.",
+    "instruction": "What are the main types of Decision Trees?",
+    "input": "",
+    "output": "The two main types of Decision Trees are Classification Trees and Regression Trees. Classification Trees predict categorical outcomes, while Regression Trees predict continuous numeric values."
+  },
+  {
+    "system": "You are a helpful AI advisor.",
+    "instruction": "What criterion is used to measure the quality of a split in a Decision Tree?",
+    "input": "",
+    "output": "The quality of a split is measured using impurity metrics such as Gini impurity, entropy (information gain), or variance reduction. The goal is to create branches that increase homogeneity within nodes."
+  },
+  {
+    "system": "You are a helpful AI advisor.",
+    "instruction": "What is Gini impurity?",
+    "input": "",
+    "output": "Gini impurity measures how often a randomly chosen element would be incorrectly labeled if it was randomly labeled according to the distribution of labels in the node. It is calculated as 1 - Σ(p_i²), where p_i is the probability of class i."
+  },
+  {
+    "system": "You are a helpful AI advisor.",
+    "instruction": "What is Entropy in Decision Trees?",
+    "input": "",
+    "output": "Entropy is a measure of disorder or impurity in a dataset. It quantifies the uncertainty in predicting the class of a randomly chosen instance. A node with only one class has an entropy of 0, meaning no uncertainty."
+  },
+  {
+    "system": "You are a helpful AI advisor.",
+    "instruction": "How does Information Gain relate to Decision Trees?",
+    "input": "",
+    "output": "Information Gain measures the reduction in entropy after a dataset is split on an attribute. It helps choose the attribute that provides the most significant improvement in purity for the resulting nodes."
+  },
+  {
+    "system": "You are a helpful AI advisor.",
+    "instruction": "Why is recursive partitioning important in Decision Trees?",
+    "input": "",
+    "output": "Recursive partitioning is the process of repeatedly splitting the dataset into subsets based on the best features until a stopping condition is met. It allows the model to capture complex, hierarchical relationships between variables."
+  },
+  {
+    "system": "You are a helpful AI advisor.",
+    "instruction": "What are leaf nodes in a Decision Tree?",
+    "input": "",
+    "output": "Leaf nodes are the terminal points of a Decision Tree where a final prediction is made. Each leaf node represents a specific output value or class label based on the conditions along the path from the root."
+  },
+  {
+    "system": "You are a helpful AI advisor.",
+    "instruction": "What does overfitting mean in the context of Decision Trees?",
+    "input": "",
+    "output": "Overfitting occurs when a Decision Tree learns patterns specific to the training data, including noise, resulting in poor generalization to unseen data. It typically happens when the tree grows too deep without pruning."
+  },
+  {
+    "system": "You are a helpful AI advisor.",
+    "instruction": "What is pruning in Decision Trees?",
+    "input": "",
+    "output": "Pruning is the process of reducing the size of a Decision Tree by removing branches that provide little predictive power. It helps prevent overfitting and improves generalization."
+  },
+  {
+    "system": "You are a helpful AI advisor.",
+    "instruction": "What is the role of the 'max_depth' parameter?",
+    "input": "",
+    "output": "The 'max_depth' parameter limits the number of levels in a Decision Tree. Controlling depth helps prevent overfitting and keeps the model interpretable."
+  },
+  {
+    "system": "You are a helpful AI advisor.",
+    "instruction": "How does 'min_samples_split' affect a Decision Tree?",
+    "input": "",
+    "output": "The 'min_samples_split' parameter defines the minimum number of samples required to split an internal node. A higher value leads to a simpler tree with fewer splits."
+  },
+  {
+    "system": "You are a helpful AI advisor.",
+    "instruction": "What is 'min_samples_leaf' used for?",
+    "input": "",
+    "output": "The 'min_samples_leaf' parameter ensures that each leaf node has at least a minimum number of samples, which prevents the model from creating overly specific rules."
+  },
+  {
+    "system": "You are a helpful AI advisor.",
+    "instruction": "What is the significance of the 'criterion' parameter?",
+    "input": "",
+    "output": "The 'criterion' parameter determines the function used to measure the quality of a split. Common values are 'gini' and 'entropy' for classification, and 'squared_error' for regression."
+  },
+  {
+    "system": "You are a helpful AI advisor.",
+    "instruction": "How does a Decision Tree handle continuous and categorical variables?",
+    "input": "",
+    "output": "Continuous variables are split based on threshold values, while categorical variables are split based on subsets of categories. Scikit-learn mainly supports numerical splits."
+  },
+  {
+    "system": "You are a helpful AI advisor.",
+    "instruction": "What is feature importance in Decision Trees?",
+    "input": "",
+    "output": "Feature importance indicates how much each feature contributes to reducing impurity in the model. It is computed as the total reduction in impurity brought by that feature across all splits."
+  },
+  {
+    "system": "You are a helpful AI advisor.",
+    "instruction": "Why do Decision Trees not require feature scaling?",
+    "input": "",
+    "output": "Decision Trees are based on threshold-based splits, not distances or gradients. Therefore, they are unaffected by differences in feature scales."
+  },
+  {
+    "system": "You are a helpful AI advisor.",
+    "instruction": "How can Decision Trees be visualized in scikit-learn?",
+    "input": "",
+    "output": "You can visualize Decision Trees using 'plot_tree' or 'export_graphviz' functions from scikit-learn. These show feature names, thresholds, and predicted values at each node."
+  },
+  {
+    "system": "You are a helpful AI advisor.",
+    "instruction": "What are the advantages of Decision Trees?",
+    "input": "",
+    "output": "Decision Trees are easy to interpret, handle both numerical and categorical data, require little preprocessing, and can model nonlinear relationships."
+  },
+  {
+    "system": "You are a helpful AI advisor.",
+    "instruction": "What are the disadvantages of Decision Trees?",
+    "input": "",
+    "output": "Decision Trees are prone to overfitting, can be unstable with small data changes, and may prefer features with more categories if not regularized."
+  },
+  {
+    "system": "You are a helpful AI advisor.",
+    "instruction": "What is variance reduction in regression trees?",
+    "input": "",
+    "output": "Variance reduction measures how much the variability of target values decreases after a split. It’s the regression equivalent of impurity reduction."
+  },
+  {
+    "system": "You are a helpful AI advisor.",
+    "instruction": "How do Decision Trees handle missing values?",
+    "input": "",
+    "output": "Scikit-learn’s DecisionTreeClassifier and DecisionTreeRegressor do not handle missing values directly. You must impute or remove missing data before training."
+  },
+  {
+    "system": "You are a helpful AI advisor.",
+    "instruction": "What does 'random_state' control in Decision Trees?",
+    "input": "",
+    "output": "The 'random_state' parameter ensures reproducibility by controlling random number generation used during training, especially for tie-breaking in splits."
+  },
+  {
+    "system": "You are a helpful AI advisor.",
+    "instruction": "Why are Decision Trees considered non-parametric models?",
+    "input": "",
+    "output": "Decision Trees do not assume any fixed functional form or parameters about the data distribution. They adapt to the data structure itself."
+  },
+  {
+    "system": "You are a helpful AI advisor.",
+    "instruction": "How does a Decision Tree differ from a linear model?",
+    "input": "",
+    "output": "A linear model fits a straight decision boundary, while a Decision Tree creates piecewise constant regions that can approximate nonlinear relationships."
+  },
+  {
+    "system": "You are a helpful AI advisor.",
+    "instruction": "What is the role of impurity-based feature selection?",
+    "input": "",
+    "output": "Impurity-based feature selection ranks features according to how much they reduce impurity in a Decision Tree, helping identify the most informative predictors."
+  },
+  {
+    "system": "You are a helpful AI advisor.",
+    "instruction": "How do you prevent overfitting in Decision Trees?",
+    "input": "",
+    "output": "You can prevent overfitting by using parameters like 'max_depth', 'min_samples_split', 'min_samples_leaf', or by applying post-pruning techniques."
+  },
+  {
+    "system": "You are a helpful AI advisor.",
+    "instruction": "What is a decision boundary in the context of Decision Trees?",
+    "input": "",
+    "output": "A decision boundary is the surface that separates different classes in feature space. Decision Trees create axis-aligned, step-like boundaries."
+  },
+  {
+    "system": "You are a helpful AI advisor.",
+    "instruction": "What is the difference between pre-pruning and post-pruning?",
+    "input": "",
+    "output": "Pre-pruning limits the tree’s growth using constraints like max depth during training. Post-pruning trims branches after the full tree is built."
+  },
+  {
+    "system": "You are a helpful AI advisor.",
+    "instruction": "Why can small changes in data affect Decision Trees?",
+    "input": "",
+    "output": "Decision Trees are sensitive to small variations because a slight data change can alter the best split points, leading to different structures."
+  },
+  {
+    "system": "You are a helpful AI advisor.",
+    "instruction": "What is the computational complexity of Decision Tree training?",
+    "input": "",
+    "output": "Training complexity is O(n * m * log(n)) where n is the number of samples and m is the number of features, assuming efficient sorting and splitting."
+  },
+  {
+    "system": "You are a helpful AI advisor.",
+    "instruction": "How does scikit-learn optimize Decision Tree splits?",
+    "input": "",
+    "output": "Scikit-learn uses an efficient algorithm that sorts feature values once per feature and then computes potential split gains in linear time."
+  },
+  {
+    "system": "You are a helpful AI advisor.",
+    "instruction": "Can Decision Trees be used for multi-output tasks?",
+    "input": "",
+    "output": "Yes, Decision Trees in scikit-learn support multi-output regression and classification, predicting multiple targets simultaneously."
+  },
+  {
+    "system": "You are a helpful AI advisor.",
+    "instruction": "What is a regression tree?",
+    "input": "",
+    "output": "A regression tree predicts continuous numeric outcomes by minimizing variance within each node after splits, rather than impurity."
+  },
+  {
+    "system": "You are a helpful AI advisor.",
+    "instruction": "How does a Decision Tree handle correlated features?",
+    "input": "",
+    "output": "When features are correlated, the tree may arbitrarily choose one over another for splitting, which can lead to unstable interpretations."
+  },
+  {
+    "system": "You are a helpful AI advisor.",
+    "instruction": "What does 'max_features' control?",
+    "input": "",
+    "output": "The 'max_features' parameter limits the number of features to consider when searching for the best split, helping regularize the tree."
+  },
+  {
+    "system": "You are a helpful AI advisor.",
+    "instruction": "What is the difference between DecisionTreeClassifier and DecisionTreeRegressor?",
+    "input": "",
+    "output": "DecisionTreeClassifier is used for categorical target variables, while DecisionTreeRegressor handles continuous targets using variance reduction."
+  },
+  {
+    "system": "You are a helpful AI advisor.",
+    "instruction": "How can Decision Trees be evaluated?",
+    "input": "",
+    "output": "They can be evaluated using accuracy, precision, recall, F1-score for classification, or mean squared error for regression tasks."
+  },
+  {
+    "system": "You are a helpful AI advisor.",
+    "instruction": "What is 'ccp_alpha' used for in scikit-learn?",
+    "input": "",
+    "output": "The 'ccp_alpha' parameter controls minimal cost-complexity pruning, removing subtrees that provide minimal performance improvement."
+  },
+  {
+    "system": "You are a helpful AI advisor.",
+    "instruction": "How does cost-complexity pruning work?",
+    "input": "",
+    "output": "It adds a penalty proportional to the number of leaves, balancing model complexity and accuracy to prevent overfitting."
+  },
+  {
+    "system": "You are a helpful AI advisor.",
+    "instruction": "What is the meaning of impurity decrease in scikit-learn trees?",
+    "input": "",
+    "output": "Impurity decrease measures how much impurity (Gini or entropy) reduces when a node is split, guiding the choice of best splits."
+  },
+  {
+    "system": "You are a helpful AI advisor.",
+    "instruction": "How can you extract decision rules from a trained tree?",
+    "input": "",
+    "output": "You can use the 'export_text' function to view decision rules in human-readable form, showing thresholds and outcomes."
+  },
+  {
+    "system": "You are a helpful AI advisor.",
+    "instruction": "What is a limitation of axis-aligned splits in Decision Trees?",
+    "input": "",
+    "output": "Axis-aligned splits cannot capture oblique decision boundaries unless combined with ensembles like Random Forests."
+  },
+  {
+    "system": "You are a helpful AI advisor.",
+    "instruction": "How can Decision Trees handle imbalanced data?",
+    "input": "",
+    "output": "You can use the 'class_weight' parameter to assign higher weights to minority classes during training."
+  },
+  {
+    "system": "You are a helpful AI advisor.",
+    "instruction": "Why are ensemble methods often built on Decision Trees?",
+    "input": "",
+    "output": "Decision Trees serve as base learners for ensembles like Random Forests and Gradient Boosted Trees because they capture nonlinearity effectively."
+  },
+  {
+    "system": "You are a helpful AI advisor.",
+    "instruction": "What are surrogate splits?",
+    "input": "",
+    "output": "Surrogate splits are backup splits used in some implementations to handle missing values when the primary split feature is unavailable."
+  },
+  {
+    "system": "You are a helpful AI advisor.",
+    "instruction": "What visualization helps interpret Decision Trees?",
+    "input": "",
+    "output": "A tree diagram or feature importance bar plot can help understand model logic and key decision paths."
+  },
+  {
+    "system": "You are a helpful AI advisor.",
+    "instruction": "Why might a shallow tree underfit?",
+    "input": "",
+    "output": "A shallow tree may fail to capture complex relationships, leading to high bias and poor performance on both training and test data."
+  },
+  {
+    "system": "You are a helpful AI advisor.",
+    "instruction": "How do Decision Trees relate to human decision-making?",
+    "input": "",
+    "output": "They mimic human reasoning by following step-by-step rules to reach conclusions, making them intuitive to interpret."
+  },
+  {
+    "system": "You are a helpful AI advisor.",
+    "instruction": "What is the stopping condition for tree growth?",
+    "input": "",
+    "output": "Common stopping conditions include reaching max depth, minimum impurity decrease, or too few samples to continue splitting."
+  },
+  {
+    "system": "You are a helpful AI advisor.",
+    "instruction": "What is the role of 'min_impurity_decrease'?",
+    "input": "",
+    "output": "It sets a threshold for the minimum impurity reduction required to perform a split, controlling model complexity."
+  },
+  {
+    "system": "You are a helpful AI advisor.",
+    "instruction": "How does scikit-learn handle ties in best split selection?",
+    "input": "",
+    "output": "When multiple splits yield equal gain, scikit-learn breaks ties deterministically using feature and threshold order."
+  },
+  {
+    "system": "You are a helpful AI advisor.",
+    "instruction": "How can Decision Trees contribute to interpretability in AI?",
+    "input": "",
+    "output": "They provide transparent, rule-based structures that can be directly examined and explained to stakeholders."
+  },
+  {
+    "system": "You are a helpful AI advisor.",
+    "instruction": "Why are Decision Trees prone to high variance?",
+    "input": "",
+    "output": "Small changes in training data can lead to different split points, making Decision Trees unstable compared to ensemble methods."
+  },
+  {
+    "system": "You are a helpful AI advisor.",
+    "instruction": "When should you prefer Decision Trees over linear models?",
+    "input": "",
+    "output": "When relationships between variables are nonlinear or involve complex conditional interactions, Decision Trees perform better."
+  },
+  {
+    "system": "You are a helpful AI advisor.",
+    "instruction": "What is the Naive Bayes algorithm?",
+    "input": "",
+    "output": "Naive Bayes is a family of probabilistic classifiers based on Bayes’ theorem with strong independence assumptions between features."
+  },
+  {
+    "system": "You are a helpful AI advisor.",
+    "instruction": "Which Naive Bayes classifiers are implemented in scikit-learn?",
+    "input": "",
+    "output": "Scikit-learn provides GaussianNB, MultinomialNB, ComplementNB, BernoulliNB, and CategoricalNB."
+  },
+  {
+    "system": "You are a helpful AI advisor.",
+    "instruction": "What is Bayes’ theorem?",
+    "input": "",
+    "output": "Bayes’ theorem is P(y|x) = P(x|y) * P(y) / P(x), describing the probability of a class given the features."
+  },
+  {
+    "system": "You are a helpful AI advisor.",
+    "instruction": "What assumption does Naive Bayes make about features?",
+    "input": "",
+    "output": "It assumes that features are conditionally independent given the class label."
+  },
+  {
+    "system": "You are a helpful AI advisor.",
+    "instruction": "What is GaussianNB used for?",
+    "input": "",
+    "output": "GaussianNB is used when features are continuous and assumed to follow a normal distribution."
+  },
+  {
+    "system": "You are a helpful AI advisor.",
+    "instruction": "What is MultinomialNB used for?",
+    "input": "",
+    "output": "MultinomialNB is used for discrete features such as term frequencies in text classification."
+  },
+  {
+    "system": "You are a helpful AI advisor.",
+    "instruction": "What is ComplementNB?",
+    "input": "",
+    "output": "ComplementNB is an adaptation of MultinomialNB designed for imbalanced datasets."
+  },
+  {
+    "system": "You are a helpful AI advisor.",
+    "instruction": "When should BernoulliNB be used?",
+    "input": "",
+    "output": "BernoulliNB should be used for binary or boolean features indicating presence or absence."
+  },
+  {
+    "system": "You are a helpful AI advisor.",
+    "instruction": "What is CategoricalNB?",
+    "input": "",
+    "output": "CategoricalNB is used for categorical features with discrete levels rather than counts."
+  },
+  {
+    "system": "You are a helpful AI advisor.",
+    "instruction": "What is the purpose of Laplace smoothing in Naive Bayes?",
+    "input": "",
+    "output": "Laplace smoothing prevents zero probabilities by adding a small value to frequency counts."
+  },
+  {
+    "system": "You are a helpful AI advisor.",
+    "instruction": "What parameter controls smoothing in scikit-learn Naive Bayes models?",
+    "input": "",
+    "output": "The parameter 'alpha' controls additive smoothing in MultinomialNB and ComplementNB."
+  },
+  {
+    "system": "You are a helpful AI advisor.",
+    "instruction": "What method is used for incremental learning in Naive Bayes?",
+    "input": "",
+    "output": "The 'partial_fit' method allows Naive Bayes classifiers to support incremental learning on batches."
+  },
+  {
+    "system": "You are a helpful AI advisor.",
+    "instruction": "Which Naive Bayes models in scikit-learn support partial_fit?",
+    "input": "",
+    "output": "GaussianNB, MultinomialNB, BernoulliNB, and ComplementNB support partial_fit."
+  },
+  {
+    "system": "You are a helpful AI advisor.",
+    "instruction": "Why use partial_fit in Naive Bayes?",
+    "input": "",
+    "output": "It enables training on large datasets in batches without loading all data into memory."
+  },
+  {
+    "system": "You are a helpful AI advisor.",
+    "instruction": "What attribute stores class prior probabilities?",
+    "input": "",
+    "output": "The attribute 'class_prior_' stores prior probabilities of each class."
+  },
+  {
+    "system": "You are a helpful AI advisor.",
+    "instruction": "How are class priors estimated in Naive Bayes?",
+    "input": "",
+    "output": "If not provided, class priors are estimated from the training data frequencies."
+  },
+  {
+    "system": "You are a helpful AI advisor.",
+    "instruction": "What is the formula for posterior probability in Naive Bayes?",
+    "input": "",
+    "output": "Posterior = (Likelihood × Prior) / Evidence."
+  },
+  {
+    "system": "You are a helpful AI advisor.",
+    "instruction": "What does the method predict_proba() return?",
+    "input": "",
+    "output": "It returns the posterior probability of each class for given samples."
+  },
+  {
+    "system": "You are a helpful AI advisor.",
+    "instruction": "What does predict_log_proba() return?",
+    "input": "",
+    "output": "It returns the logarithm of class probabilities, which is numerically more stable."
+  },
+  {
+    "system": "You are a helpful AI advisor.",
+    "instruction": "Why is Naive Bayes called 'naive'?",
+    "input": "",
+    "output": "Because it assumes all features are independent given the class label, which is rarely true in practice."
+  },
+  {
+    "system": "You are a helpful AI advisor.",
+    "instruction": "What kind of tasks is Naive Bayes suited for?",
+    "input": "",
+    "output": "It is commonly used for classification tasks such as spam detection and text categorization."
+  },
+  {
+    "system": "You are a helpful AI advisor.",
+    "instruction": "Why is Naive Bayes efficient?",
+    "input": "",
+    "output": "It requires only simple counts and probability computations, making it computationally fast."
+  },
+  {
+    "system": "You are a helpful AI advisor.",
+    "instruction": "What data type does MultinomialNB expect?",
+    "input": "",
+    "output": "It expects non-negative feature counts such as word frequencies."
+  },
+  {
+    "system": "You are a helpful AI advisor.",
+    "instruction": "What is the 'fit' method used for in Naive Bayes?",
+    "input": "",
+    "output": "The fit method trains the model by estimating parameters from the training data."
+  },
+  {
+    "system": "You are a helpful AI advisor.",
+    "instruction": "What is the role of 'var_smoothing' in GaussianNB?",
+    "input": "",
+    "output": "The 'var_smoothing' parameter adds a small constant to variances for numerical stability."
+  },
+  {
+    "system": "You are a helpful AI advisor.",
+    "instruction": "Can GaussianNB handle missing values?",
+    "input": "",
+    "output": "Yes, GaussianNB can handle missing values by ignoring them during likelihood computation."
+  },
+  {
+    "system": "You are a helpful AI advisor.",
+    "instruction": "Why is ComplementNB more robust than MultinomialNB?",
+    "input": "",
+    "output": "ComplementNB uses statistics from the complement of each class, reducing bias in imbalanced data."
+  },
+  {
+    "system": "You are a helpful AI advisor.",
+    "instruction": "What attribute stores the learned class labels?",
+    "input": "",
+    "output": "The 'classes_' attribute stores all class labels known to the classifier."
+  },
+  {
+    "system": "You are a helpful AI advisor.",
+    "instruction": "What is the difference between predict and predict_proba?",
+    "input": "",
+    "output": "predict gives the class with the highest probability, while predict_proba returns probabilities for all classes."
+  },
+  {
+    "system": "You are a helpful AI advisor.",
+    "instruction": "Which Naive Bayes classifier works best for text classification?",
+    "input": "",
+    "output": "MultinomialNB is generally preferred for text classification with word frequency features."
+  },
+  {
+    "system": "You are a helpful AI advisor.",
+    "instruction": "What type of distribution does GaussianNB assume?",
+    "input": "",
+    "output": "It assumes each feature follows a Gaussian (normal) distribution within each class."
+  },
+  {
+    "system": "You are a helpful AI advisor.",
+    "instruction": "How does scikit-learn store feature statistics in Naive Bayes?",
+    "input": "",
+    "output": "Each model stores per-class statistics like feature means, variances, or counts depending on type."
+  },
+  {
+    "system": "You are a helpful AI advisor.",
+    "instruction": "Can Naive Bayes be used for continuous data?",
+    "input": "",
+    "output": "Yes, GaussianNB handles continuous data effectively."
+  },
+  {
+    "system": "You are a helpful AI advisor.",
+    "instruction": "What is the output of the score() method?",
+    "input": "",
+    "output": "The score() method returns the mean accuracy on the given test data and labels."
+  },
+  {
+    "system": "You are a helpful AI advisor.",
+    "instruction": "What is incremental learning?",
+    "input": "",
+    "output": "Incremental learning is training a model using data batches instead of the full dataset at once."
+  },
+  {
+    "system": "You are a helpful AI advisor.",
+    "instruction": "Why is Naive Bayes a good baseline model?",
+    "input": "",
+    "output": "It is simple, fast, and performs well on many real-world datasets."
+  },
+  {
+    "system": "You are a helpful AI advisor.",
+    "instruction": "Does Naive Bayes work with negative feature values?",
+    "input": "",
+    "output": "No, MultinomialNB and ComplementNB require non-negative features, while GaussianNB can handle negatives."
+  },
+  {
+    "system": "You are a helpful AI advisor.",
+    "instruction": "What happens if a feature has zero probability for a class?",
+    "input": "",
+    "output": "Without smoothing, the class probability becomes zero; smoothing fixes this issue."
+  },
+  {
+    "system": "You are a helpful AI advisor.",
+    "instruction": "Which Naive Bayes model is suitable for categorical variables?",
+    "input": "",
+    "output": "CategoricalNB is designed specifically for categorical features."
+  },
+  {
+    "system": "You are a helpful AI advisor.",
+    "instruction": "How are probabilities stored in MultinomialNB?",
+    "input": "",
+    "output": "They are stored in the 'feature_log_prob_' attribute as log probabilities for each feature per class."
+  },
+  {
+    "system": "You are a helpful AI advisor.",
+    "instruction": "What does the attribute 'class_count_' represent?",
+    "input": "",
+    "output": "It represents the number of training samples observed in each class."
+  },
+  {
+    "system": "You are a helpful AI advisor.",
+    "instruction": "What is the computational complexity of Naive Bayes?",
+    "input": "",
+    "output": "It is linear in the number of features and samples, O(n_features × n_samples)."
+  },
+  {
+    "system": "You are a helpful AI advisor.",
+    "instruction": "Is Naive Bayes a discriminative or generative model?",
+    "input": "",
+    "output": "Naive Bayes is a generative model since it models the joint probability P(x, y)."
+  },
+  {
+    "system": "You are a helpful AI advisor.",
+    "instruction": "Can Naive Bayes handle online learning?",
+    "input": "",
+    "output": "Yes, through the partial_fit method that updates the model incrementally."
+  },
+  {
+    "system": "You are a helpful AI advisor.",
+    "instruction": "What type of problems can Naive Bayes struggle with?",
+    "input": "",
+    "output": "It struggles when feature independence assumptions are heavily violated."
+  },
+  {
+    "system": "You are a helpful AI advisor.",
+    "instruction": "How can you evaluate a Naive Bayes classifier?",
+    "input": "",
+    "output": "By using metrics such as accuracy, precision, recall, and F1-score."
+  },
+  {
+    "system": "You are a helpful AI advisor.",
+    "instruction": "What is the main advantage of Naive Bayes for text data?",
+    "input": "",
+    "output": "It performs well even with high-dimensional sparse text features."
+  },
+  {
+    "system": "You are a helpful AI advisor.",
+    "instruction": "Which Naive Bayes variant is least affected by class imbalance?",
+    "input": "",
+    "output": "ComplementNB is more robust to class imbalance than MultinomialNB."
+  },
+  {
+    "system": "You are a helpful AI advisor.",
+    "instruction": "What does Naive Bayes output when predicting unseen data?",
+    "input": "",
+    "output": "It outputs the most probable class label based on learned feature likelihoods."
+  },
+  {
+    "system": "You are a helpful AI advisor.",
+    "instruction": "Can Naive Bayes be combined with other models?",
+    "input": "",
+    "output": "Yes, it is often used in ensembles and as a baseline comparison in pipelines."
+  },
+  {
+    "system": "You are a helpful AI advisor.",
+    "instruction": "What is Regression?",
+    "input": "",
+    "output": "Regression is a statistical modeling technique that estimates the relationship between one or more predictor variables and a response variable."
+  },
+  {
+    "system": "You are a helpful AI advisor.",
+    "instruction": "What are the common types of regression?",
+    "input": "",
+    "output": "The main types of regression include Linear Regression, Logistic Regression, Survival Analysis, and Nonlinear Regression."
+  },
+  {
+    "system": "You are a helpful AI advisor.",
+    "instruction": "What is Linear Regression?",
+    "input": "",
+    "output": "Linear regression predicts the value of a numeric response variable using one or more predictor variables, assuming a linear relationship between them."
+  },
+  {
+    "system": "You are a helpful AI advisor.",
+    "instruction": "Why is the least squares method used in regression?",
+    "input": "",
+    "output": "The least squares method minimizes the squared difference between observed and predicted values, ensuring the best-fit line represents the data as accurately as possible."
+  },
+  {
+    "system": "You are a helpful AI advisor.",
+    "instruction": "What are predictor and response variables in regression?",
+    "input": "",
+    "output": "Predictor variables (independent variables) are used to make predictions, while the response variable (dependent variable) is the output being predicted."
+  },
+  {
+    "system": "You are a helpful AI advisor.",
+    "instruction": "What is the purpose of regression analysis?",
+    "input": "",
+    "output": "Regression analysis helps understand relationships between variables and predict future outcomes based on existing data."
+  },
+  {
+    "system": "You are a helpful AI advisor.",
+    "instruction": "What are the assumptions of Linear Regression?",
+    "input": "",
+    "output": "Key assumptions include linearity, independence, homoscedasticity, normality of residuals, and no multicollinearity among predictors."
+  },
+  {
+    "system": "You are a helpful AI advisor.",
+    "instruction": "What is Homoscedasticity in Linear Regression?",
+    "input": "",
+    "output": "Homoscedasticity means that the residuals have constant variance across all levels of the independent variable."
+  },
+  {
+    "system": "You are a helpful AI advisor.",
+    "instruction": "What is the formula for a best-fit line in Linear Regression?",
+    "input": "",
+    "output": "The formula is y = mx + b, where m is the slope and b is the intercept."
+  },
+  {
+    "system": "You are a helpful AI advisor.",
+    "instruction": "Why is Linear Regression considered a supervised learning algorithm?",
+    "input": "",
+    "output": "Because it learns from labeled data to predict continuous numerical outcomes."
+  },
+  {
+    "system": "You are a helpful AI advisor.",
+    "instruction": "What is Simple Linear Regression?",
+    "input": "",
+    "output": "Simple Linear Regression involves one independent variable and one dependent variable with a linear relationship."
+  },
+  {
+    "system": "You are a helpful AI advisor.",
+    "instruction": "What is Multiple Linear Regression?",
+    "input": "",
+    "output": "Multiple Linear Regression uses two or more independent variables to predict a single dependent variable."
+  },
+  {
+    "system": "You are a helpful AI advisor.",
+    "instruction": "What are the advantages of Linear Regression?",
+    "input": "",
+    "output": "It is simple, interpretable, computationally efficient, and widely used for predictive modeling."
+  },
+  {
+    "system": "You are a helpful AI advisor.",
+    "instruction": "What is Multicollinearity in regression?",
+    "input": "",
+    "output": "Multicollinearity occurs when predictor variables are highly correlated, which can distort coefficient estimates."
+  },
+  {
+    "system": "You are a helpful AI advisor.",
+    "instruction": "What does the slope represent in a regression line?",
+    "input": "",
+    "output": "The slope represents the change in the dependent variable for a one-unit change in the independent variable."
+  },
+  {
+    "system": "You are a helpful AI advisor.",
+    "instruction": "What does the intercept represent in Linear Regression?",
+    "input": "",
+    "output": "The intercept represents the predicted value of the dependent variable when all independent variables are zero."
+  },
+  {
+    "system": "You are a helpful AI advisor.",
+    "instruction": "What is the cost function in Linear Regression?",
+    "input": "",
+    "output": "The cost function measures the difference between predicted and actual values, often using Mean Squared Error (MSE)."
+  },
+  {
+    "system": "You are a helpful AI advisor.",
+    "instruction": "What is Mean Squared Error (MSE)?",
+    "input": "",
+    "output": "MSE is the average of the squared differences between predicted and actual values."
+  },
+  {
+    "system": "You are a helpful AI advisor.",
+    "instruction": "Why do we minimize MSE in Linear Regression?",
+    "input": "",
+    "output": "Minimizing MSE ensures that the regression line fits the data as closely as possible."
+  },
+  {
+    "system": "You are a helpful AI advisor.",
+    "instruction": "What is Gradient Descent in regression?",
+    "input": "",
+    "output": "Gradient Descent is an optimization algorithm that updates model parameters iteratively to minimize the cost function."
+  },
+  {
+    "system": "You are a helpful AI advisor.",
+    "instruction": "Why is Gradient Descent important in regression?",
+    "input": "",
+    "output": "It helps find the optimal parameters of the regression line by minimizing the loss function."
+  },
+  {
+    "system": "You are a helpful AI advisor.",
+    "instruction": "What is the role of residuals in regression?",
+    "input": "",
+    "output": "Residuals represent the difference between actual and predicted values and indicate model accuracy."
+  },
+  {
+    "system": "You are a helpful AI advisor.",
+    "instruction": "What is the normality assumption in Linear Regression?",
+    "input": "",
+    "output": "It assumes that residuals follow a normal distribution."
+  },
+  {
+    "system": "You are a helpful AI advisor.",
+    "instruction": "Why is Linear Regression sensitive to outliers?",
+    "input": "",
+    "output": "Outliers can disproportionately affect the slope and intercept, distorting the regression line."
+  },
+  {
+    "system": "You are a helpful AI advisor.",
+    "instruction": "What is Extrapolation in regression?",
+    "input": "",
+    "output": "Extrapolation means making predictions beyond the range of observed data, which can be unreliable."
+  },
+  {
+    "system": "You are a helpful AI advisor.",
+    "instruction": "What is the difference between Simple and Multiple Regression?",
+    "input": "",
+    "output": "Simple regression uses one predictor, while multiple regression uses two or more predictors to estimate the dependent variable."
+  },
+  {
+    "system": "You are a helpful AI advisor.",
+    "instruction": "What are some limitations of Linear Regression?",
+    "input": "",
+    "output": "It assumes linearity, is sensitive to outliers, and struggles with multicollinearity and non-linear relationships."
+  },
+  {
+    "system": "You are a helpful AI advisor.",
+    "instruction": "What is the equation for Multiple Linear Regression?",
+    "input": "",
+    "output": "The equation is y = β₀ + β₁x₁ + β₂x₂ + ... + βₖxₖ."
+  },
+  {
+    "system": "You are a helpful AI advisor.",
+    "instruction": "Why is Linear Regression widely used in machine learning?",
+    "input": "",
+    "output": "It is simple, interpretable, efficient, and serves as a foundation for many advanced algorithms."
+  },
+  {
+    "system": "You are a helpful AI advisor.",
+    "instruction": "What is the difference between Linear and Nonlinear Regression?",
+    "input": "",
+    "output": "Linear regression assumes a straight-line relationship, while nonlinear regression models curved relationships between variables."
+  },
+  {
+    "system": "You are a helpful AI advisor.",
+    "instruction": "What is R-squared in regression?",
+    "input": "",
+    "output": "R-squared measures the proportion of variance in the dependent variable explained by the independent variables."
+  },
+  {
+    "system": "You are a helpful AI advisor.",
+    "instruction": "Why is data normalization important in regression?",
+    "input": "",
+    "output": "Normalization ensures that all features contribute equally to the model, improving stability and convergence."
+  },
+  {
+    "system": "You are a helpful AI advisor.",
+    "instruction": "What is the main goal of regression analysis?",
+    "input": "",
+    "output": "The main goal is to model and predict relationships between variables."
+  },
+  {
+    "system": "You are a helpful AI advisor.",
+    "instruction": "What is a residual plot used for?",
+    "input": "",
+    "output": "A residual plot helps check assumptions like linearity and homoscedasticity in regression models."
+  },
+  {
+    "system": "You are a helpful AI advisor.",
+    "instruction": "Why should we avoid extrapolation in regression?",
+    "input": "",
+    "output": "Because the model may not hold outside the observed data range, leading to inaccurate predictions."
+  },
+  {
+    "system": "You are a helpful AI advisor.",
+    "instruction": "What does model interpretability mean in regression?",
+    "input": "",
+    "output": "It refers to how easily we can understand the relationship between inputs and outputs in the model."
+  },
+  {
+    "system": "You are a helpful AI advisor.",
+    "instruction": "What are regression coefficients?",
+    "input": "",
+    "output": "They are numerical values (slopes and intercepts) that represent the relationship strength and direction between variables."
+  },
+  {
+    "system": "You are a helpful AI advisor.",
+    "instruction": "Why is the intercept important in Linear Regression?",
+    "input": "",
+    "output": "It represents the baseline value of the dependent variable when all predictors are zero."
+  },
+  {
+    "system": "You are a helpful AI advisor.",
+    "instruction": "What is a scatter plot used for in regression?",
+    "input": "",
+    "output": "It visually shows the relationship between independent and dependent variables and helps assess linearity."
+  },
+  {
+    "system": "You are a helpful AI advisor.",
+    "instruction": "Why is a representative sample important for regression?",
+    "input": "",
+    "output": "A representative sample ensures the model generalizes well to the target population."
+  },
+  {
+    "system": "You are a helpful AI advisor.",
+    "instruction": "What is the difference between dependent and independent variables?",
+    "input": "",
+    "output": "Dependent variables are the outcomes predicted by independent variables, which are the predictors."
+  },
+  {
+    "system": "You are a helpful AI advisor.",
+    "instruction": "How can we check for multicollinearity?",
+    "input": "",
+    "output": "By calculating the Variance Inflation Factor (VIF) or correlation matrix among predictors."
+  },
+  {
+    "system": "You are a helpful AI advisor.",
+    "instruction": "What is the importance of sample size in regression?",
+    "input": "",
+    "output": "A larger sample size increases statistical power and reliability of regression estimates."
+  },
+  {
+    "system": "You are a helpful AI advisor.",
+    "instruction": "Why are residuals important in evaluating a model?",
+    "input": "",
+    "output": "They show how well the model’s predictions match actual observations."
+  },
+  {
+    "system": "You are a helpful AI advisor.",
+    "instruction": "What is the objective of Linear Regression training?",
+    "input": "",
+    "output": "To minimize the loss function by adjusting model parameters for the best fit line."
+  },
+  {
+    "system": "You are a helpful AI advisor.",
+    "instruction": "Why is Linear Regression computationally efficient?",
+    "input": "",
+    "output": "It involves simple mathematical operations and can be solved analytically using matrix algebra."
+  },
+  {
+    "system": "You are a helpful AI advisor.",
+    "instruction": "What is the difference between training and testing data in regression?",
+    "input": "",
+    "output": "Training data is used to fit the model, while testing data evaluates its predictive performance."
+  },
+  {
+    "system": "You are a helpful AI advisor.",
+    "instruction": "What does the term 'best-fit line' mean?",
+    "input": "",
+    "output": "It is the line that minimizes the sum of squared differences between observed and predicted values."
+  },
+  {
+    "system": "You are a helpful AI advisor.",
+    "instruction": "Why is regression analysis important in real-world problems?",
+    "input": "",
+    "output": "It helps in forecasting, decision-making, and understanding how factors influence outcomes."
+  },
+  {
+    "system": "You are a helpful AI advisor.",
+    "instruction": "What are some applications of Linear Regression?",
+    "input": "",
+    "output": "Applications include predicting house prices, estimating sales, and modeling medical outcomes."
+  }
+]

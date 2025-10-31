@@ -164,7 +164,7 @@ function Home() {
         {error && <p className="mt-3 text-sm text-red-100">{error}</p>}
         {uploadSuccess && (
           <p className="mt-3 text-sm text-green-100">
-            ✅ File uploaded successfully to backend!
+             File uploaded successfully to backend!
           </p>
         )}
 
