@@ -158,7 +158,7 @@ const LinearRegressionSteps = () => {
     }
 
     const containerClass = isInStep 
-      ? "bg-linear-to-br from-white/5 to-white/10 backdrop-blur-md rounded-xl p-4 border border-white/20 shadow-2xl"
+      ? "bg-linear-to-br from-white/5 to-white/10 backdrop-blur-md rounded-xl p-2 border border-white/20 shadow-2xl h-full"
       : "bg-linear-to-br from-white/10 to-white/5 backdrop-blur-sm rounded-2xl p-6 mb-6 shadow-xl ring-1 ring-white/20";
 
     return (
@@ -169,8 +169,8 @@ const LinearRegressionSteps = () => {
             Interactive Regression Chart
           </h2>
         )}
-        <div className="bg-white/10 rounded-xl p-4 border border-white/20">
-          <ResponsiveContainer width="100%" height={isInStep ? 280 : 400}>
+        <div className="bg-white rounded-xl p-2 border border-gray-200 shadow-inner h-full">
+          <ResponsiveContainer width="100%" height={isInStep ? 400 : 400}>
             <ScatterChart data={chartData}>
               <CartesianGrid 
                 strokeDasharray="3 3" 
@@ -465,11 +465,11 @@ const LinearRegressionSteps = () => {
               <div key={idx} className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 shadow-xl ring-1 ring-white/10">
                 {/* For steps 4, 5, 6 show side-by-side layout with chart */}
                 {(step.step_number >= 4) ? (
-                  <div className="grid lg:grid-cols-2 gap-6 items-start">
+                  <div className="grid lg:grid-cols-2 gap-6 items-stretch min-h-[500px]">
                     <div className="text-left">
                       {renderStepContent(step, idx)}
                     </div>
-                    <div className="lg:sticky lg:top-6">
+                    <div className="lg:sticky lg:top-6 h-full">
                       <RegressionChart isInStep={true} />
                     </div>
                   </div>
@@ -486,11 +486,11 @@ const LinearRegressionSteps = () => {
               <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 shadow-xl ring-1 ring-white/10 transform transition-all duration-300 scale-105">
                 {/* For steps 4, 5, 6 show side-by-side layout with chart */}
                 {(steps[currentStep].step_number >= 4) ? (
-                  <div className="grid lg:grid-cols-2 gap-6 items-start">
+                  <div className="grid lg:grid-cols-2 gap-6 items-stretch min-h-[500px]">
                     <div className="text-left">
                       {renderStepContent(steps[currentStep], currentStep)}
                     </div>
-                    <div className="lg:sticky lg:top-6">
+                    <div className="lg:sticky lg:top-6 h-full">
                       <RegressionChart isInStep={true} />
                     </div>
                   </div>
