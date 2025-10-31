@@ -4,9 +4,12 @@ function Home() {
   const fileRef = useRef(null);
   const [fileName, setFileName] = useState("");
   const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [uploadSuccess, setUploadSuccess] = useState(false);
 
   const handlePick = (e) => {
     setError("");
+    setUploadSuccess(false);
     const f = e.target.files?.[0];
     if (!f) return;
 
@@ -16,6 +19,43 @@ function Home() {
       return;
     }
     setFileName(f.name);
+  };
+
+  const uploadToBackend = async () => {
+    if (!fileRef.current?.files?.[0]) {
+      setError("Please select a file first.");
+      return;
+    }
+
+    const file = fileRef.current.files[0];
+    const formData = new FormData();
+    formData.append('csvFile', file);
+
+    setIsLoading(true);
+    setError("");
+    setUploadSuccess(false);
+
+    try {
+      const response = await fetch('http://localhost:3000/upload-csv', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const result = await response.json();
+      console.log('Upload successful:', result);
+      setUploadSuccess(true);
+      setError("");
+    } catch (err) {
+      console.error('Upload failed:', err);
+      setError(`Upload failed: ${err.message}`);
+      setUploadSuccess(false);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -29,7 +69,7 @@ function Home() {
           Upload a CSV dataset to get started
         </p>
 
-        <div className="mt-8">
+        <div className="mt-8 space-y-4">
           <button
             type="button"
             onClick={() => fileRef.current?.click()}
@@ -37,6 +77,17 @@ function Home() {
           >
             Upload Dataset
           </button>
+
+          {fileName && (
+            <button
+              type="button"
+              onClick={uploadToBackend}
+              disabled={isLoading}
+              className="mx-auto inline-flex items-center justify-center rounded-full bg-emerald-600 text-white font-semibold px-8 py-3 shadow-xl ring-1 ring-black/10 transition hover:scale-[1.02] hover:shadow-2xl active:scale-100 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isLoading ? "Uploading..." : "Send to Backend"}
+            </button>
+          )}
 
           <input
             ref={fileRef}
@@ -53,6 +104,11 @@ function Home() {
           </p>
         )}
         {error && <p className="mt-3 text-sm text-red-100">{error}</p>}
+        {uploadSuccess && (
+          <p className="mt-3 text-sm text-green-100">
+            ✅ File uploaded successfully to backend!
+          </p>
+        )}
       </div>
     </main>
   );
