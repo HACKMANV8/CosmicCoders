@@ -8,7 +8,7 @@ import Id3Runner from './pages/Id3';
 import KnnRegression from './pages/KnnRegression';
 import Chatbot from './components/Chatbot';
 import { useState } from 'react';
-
+import SupportVectorRegressionSteps from './pages/svr';
 function App() {
   const [isChatOpen, setIsChatOpen] = useState(false);
 
@@ -20,6 +20,7 @@ function App() {
       }`}>
         <Routes>
           <Route path="/" element={<Home />} />
+          <Route path="/svr" element={<SupportVectorRegressionSteps />} />
           <Route path="*" element={<div style={{ padding: 24 }}>Not Found</div>} />
           <Route path="/simpleLinearRegression" element={<SimpleLinearRegression />} />
           <Route path="/naiveBayes" element={<NaiveBayes />} />
