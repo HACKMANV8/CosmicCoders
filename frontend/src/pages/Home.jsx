@@ -125,6 +125,10 @@ const handleAlgorithmSelect = (algo) => {
       navigate("/knnRegression");
       break;
 
+    case "knn_classification":
+      navigate("/knnClassification");
+      break;
+
     case "support_vector_regression":
     case "svr":
       navigate("/svr");

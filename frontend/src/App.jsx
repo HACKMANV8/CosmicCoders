@@ -6,6 +6,7 @@ import SimpleLinearRegression from './pages/simplelinearregression';
 import NaiveBayes from './pages/naiveBayes';
 import Id3Runner from './pages/Id3';
 import KnnRegression from './pages/KnnRegression';
+import KnnClassification from './pages/KnnClassification';
 import Chatbot from './components/Chatbot';
 import { useState } from 'react';
 import SupportVectorRegressionSteps from './pages/svr';
@@ -26,6 +27,7 @@ function App() {
           <Route path="/naiveBayes" element={<NaiveBayes />} />
           <Route path="/id3" element={<Id3Runner />} />
           <Route path="/knnRegression" element={<KnnRegression />} />
+          <Route path="/knnClassification" element={<KnnClassification />} />
         </Routes>
       </div>
       

@@ -32,6 +32,7 @@ from linear_regression import run_linear_regression
 from id3 import compute_id3_root_steps
 from knn_regression import run_knn_regression
 from naive_bayes import run_naive_bayes
+from knn_classification import run_knn_classification
 from algorithm_comparison import compare_regression_algorithms
 from pandas.api.types import (
     is_bool_dtype,
@@ -270,7 +271,7 @@ async def upload_and_analyze_dataset(
         
         if info["inferred"] == "classification":
             resp["label_preview"] = label_peek(df[target])
-            resp["suggested_algorithms"] = ["id3", "naive_bayes", "knn"]
+            resp["suggested_algorithms"] = ["id3", "naive_bayes", "knn_classification"]
             try:
                 algos, best_alg = _evaluate_classification(df, target)
                 resp["algorithm_comparison"] = {
@@ -414,6 +415,36 @@ async def naive_bayes_route(req: NaiveBayesRequest = Body(...)):
     return JSONResponse({
         "run_id": run_id,
         "algorithm": "naive_bayes",
+        "dataset_id": req.dataset_id,
+        "steps": result["steps"],
+        "summary": result.get("summary"),
+        "dataset_preview": result.get("dataset_preview"),
+        "metadata": result.get("metadata"),
+    })
+
+# -----------------------------------------------------------
+# KNN Classification Algorithm
+# -----------------------------------------------------------
+class KNNClassificationRequest(BaseModel):
+    dataset_id: str
+    params: Optional[Dict[str, Any]] = None
+
+@app.post("/knnclassification")
+async def knn_classification_route(req: KNNClassificationRequest = Body(...)):
+    csv_path = find_dataset_path(req.dataset_id)
+    df = read_tabular_file(csv_path)
+    
+    params = req.params or {}
+    result = run_knn_classification(df, params)
+    
+    run_id = uuid.uuid4().hex
+    for i, s in enumerate(result["steps"], start=1):
+        s["run_id"] = run_id
+        s["step_id"] = i
+    
+    return JSONResponse({
+        "run_id": run_id,
+        "algorithm": "knn_classification",
         "dataset_id": req.dataset_id,
         "steps": result["steps"],
         "summary": result.get("summary"),
