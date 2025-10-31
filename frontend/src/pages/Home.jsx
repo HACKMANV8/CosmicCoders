@@ -68,25 +68,28 @@ function Home() {
         <p className="mt-4 text-white/85">
           Upload a CSV dataset to get started
         </p>
-
-        <div className="mt-8 space-y-4">
-          <button
-            type="button"
-            onClick={() => fileRef.current?.click()}
-            className="inline-flex items-center justify-center rounded-full bg-white/95 text-slate-900 font-semibold px-8 py-3 shadow-xl ring-1 ring-black/10 transition hover:scale-[1.02] hover:shadow-2xl active:scale-100"
-          >
-            Upload Dataset
-          </button>
-
-          {fileName && (
+<div className="mt-8 space-y-4">
+          <div>
             <button
               type="button"
-              onClick={uploadToBackend}
-              disabled={isLoading}
-              className="mx-auto inline-flex items-center justify-center rounded-full bg-emerald-600 text-white font-semibold px-8 py-3 shadow-xl ring-1 ring-black/10 transition hover:scale-[1.02] hover:shadow-2xl active:scale-100 disabled:opacity-50 disabled:cursor-not-allowed"
+              onClick={() => fileRef.current?.click()}
+              className="inline-flex items-center justify-center rounded-full bg-white/95 text-slate-900 font-semibold px-8 py-3 shadow-xl ring-1 ring-black/10 transition hover:scale-[1.02] hover:shadow-2xl active:scale-100"
             >
-              {isLoading ? "Uploading..." : "Send to Backend"}
+              Upload Dataset
             </button>
+          </div>
+
+          {fileName && (
+            <div>
+              <button
+                type="button"
+                onClick={uploadToBackend}
+                disabled={isLoading}
+                className="inline-flex items-center justify-center rounded-full bg-emerald-600 text-white font-semibold px-8 py-3 shadow-xl ring-1 ring-black/10 transition hover:scale-[1.02] hover:shadow-2xl active:scale-100 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isLoading ? "Uploading..." : "Send to Backend"}
+              </button>
+            </div>
           )}
 
           <input
