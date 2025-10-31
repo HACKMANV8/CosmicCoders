@@ -48,6 +48,8 @@ const uploadToBackend = async () => {
     const result = await response.json();
     console.log("Upload successful:", result);
     setUploadSuccess(true);
+    localStorage.setItem("datasetid",result.dataset_id);
+    console.log(localStorage.getItem("datasetid"));
   } catch (err) {
     setError(`Upload failed: ${err.message}`);
   } finally {
