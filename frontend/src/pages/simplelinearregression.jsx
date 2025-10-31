@@ -315,32 +315,32 @@ const LinearRegressionSteps = () => {
 
         {/* Display mathematical formulas with KaTeX */}
         {step.step_number === 1 && step.x_mean !== undefined && step.y_mean !== undefined && (
-          <div className="mt-4 bg-gray-900/50 rounded-xl p-4">
+          <div className="mt-4 bg-white/95 rounded-xl p-4 border border-gray-300 shadow-sm">
             <BlockMath math={`\\bar{x} = \\frac{\\sum x_i}{n} = ${step.x_mean.toFixed(3)}`} />
             <BlockMath math={`\\bar{y} = \\frac{\\sum y_i}{n} = ${step.y_mean.toFixed(3)}`} />
           </div>
         )}
 
         {step.step_number === 2 && step.slope !== undefined && (
-          <div className="mt-4 bg-gray-900/50 rounded-xl p-4">
+          <div className="mt-4 bg-white/95 rounded-xl p-4 border border-gray-300 shadow-sm">
             <BlockMath math={`m = \\frac{\\sum (x_i - \\bar{x})(y_i - \\bar{y})}{\\sum (x_i - \\bar{x})^2} = ${step.slope.toFixed(3)}`} />
           </div>
         )}
 
         {step.step_number === 3 && step.intercept !== undefined && (
-          <div className="mt-4 bg-gray-900/50 rounded-xl p-4">
+          <div className="mt-4 bg-white/95 rounded-xl p-4 border border-gray-300 shadow-sm">
             <BlockMath math={`c = \\bar{y} - m \\bar{x} = ${step.intercept.toFixed(3)}`} />
           </div>
         )}
 
         {step.step_number === 4 && step.equation && (
-          <div className="mt-4 bg-gray-900/50 rounded-xl p-4">
+          <div className="mt-4 bg-white/95 rounded-xl p-4 border border-gray-300 shadow-sm">
             <BlockMath math={`y = mx + c`} />
           </div>
         )}
 
         {step.step_number === 6 && step.r2_score !== undefined && (
-          <div className="mt-4 bg-gray-900/50 rounded-xl p-4">
+          <div className="mt-4 bg-white/95 rounded-xl p-4 border border-gray-300 shadow-sm">
             <BlockMath math={`R^2 = 1 - \\frac{SS_{res}}{SS_{tot}} = ${step.r2_score.toFixed(3)}`} />
           </div>
         )}
