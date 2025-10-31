@@ -36,7 +36,7 @@ function Home() {
     setUploadSuccess(false);
 
     try {
-      const response = await fetch('http://localhost:3000/upload-csv', {
+      const response = await fetch('http://localhost:8000/upload-csv', {
         method: 'POST',
         body: formData,
       });
