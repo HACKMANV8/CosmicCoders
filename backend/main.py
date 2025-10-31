@@ -121,12 +121,28 @@ async def upload_and_analyze_dataset(
     await file.close()
 
     df = read_tabular_file(save_path)
+    
+    # Auto-detect target column if not provided or not found
+    if not target or target not in df.columns:
+        # Look for common target column names
+        possible_targets = ["value", "Salary", "Price", "Target", "Y", "y", "target"]
+        for col in possible_targets:
+            if col in df.columns:
+                target = col
+                break
+        if not target:
+            # Use last numeric column as target
+            numeric_cols = df.select_dtypes(include=['number']).columns
+            if len(numeric_cols) >= 1:
+                target = numeric_cols[-1]  # Use last numeric column as target
+    
     resp = {
         "dataset_id": unique_id,
         "filename": Path(orig).name,
         "rows": len(df),
         "columns": df.columns.tolist(),
         "message": "Upload successful",
+        "detected_target": target  # Add this for debugging
     }
 
     if target and target in df.columns:
@@ -137,6 +153,29 @@ async def upload_and_analyze_dataset(
             resp["suggested_algorithms"] = ["id3", "naive_bayes", "knn"]
         elif info["inferred"] == "regression":
             resp["suggested_algorithms"] = ["knn_regression","support vector regression", "linear_regression"]
+            
+            # Run algorithm comparison for regression datasets
+            try:
+                comparison_result = compare_regression_algorithms(
+                    df, 
+                    target_col=target,
+                    test_size=0.2,
+                    random_state=42
+                )
+                resp["algorithm_comparison"] = comparison_result
+                
+                # Find the best algorithm based on R² score
+                if comparison_result and "algorithms" in comparison_result:
+                    best_algo = max(
+                        comparison_result["algorithms"], 
+                        key=lambda x: x["metrics"]["r2_score"]
+                    )
+                    resp["best_algorithm"] = best_algo["algorithm"]
+                    
+            except Exception as e:
+                # Don't fail upload if comparison fails
+                print(f"Algorithm comparison failed: {e}")
+                resp["algorithm_comparison_error"] = str(e)
         else:
             resp["suggested_algorithms"] = []
 

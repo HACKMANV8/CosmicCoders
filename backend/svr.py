@@ -96,7 +96,6 @@ def run_svr(df, params):
         })
 
     step3_calc = (
-        
         f"w (slope) = {slope:.4f}\n"
         f"b (intercept) = {intercept:.4f}\n"
         f"ε (unscaled) = ±{unscaled_epsilon:.4f}\n"

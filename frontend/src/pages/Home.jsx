@@ -218,11 +218,15 @@ const handleAlgorithmSelect = (algo) => {
             </h3>
             <div className="flex flex-wrap justify-center gap-3">
               {suggestedAlgorithms.map((algo, index) => {
-                // Find accuracy for this algorithm
-                const algoData = algorithmComparison?.algorithms?.find(a => 
-                  a.algorithm.toLowerCase().replace(/\s+/g, '_') === algo.toLowerCase()
-                );
+                // Find accuracy for this algorithm with more robust matching
+                const algoData = algorithmComparison?.algorithms?.find(a => {
+                  const normalizedAlgorithm = a.algorithm.toLowerCase().replace(/\s+/g, '_');
+                  const normalizedSuggested = algo.toLowerCase().replace(/\s+/g, '_');
+                  console.log(`Comparing: "${normalizedAlgorithm}" vs "${normalizedSuggested}"`);
+                  return normalizedAlgorithm === normalizedSuggested;
+                });
                 const accuracy = algoData?.metrics?.accuracy_percentage;
+                console.log(`Algorithm: ${algo}, Found data:`, algoData ? 'Yes' : 'No', `Accuracy: ${accuracy}`);
                 
                 return (
                   <button

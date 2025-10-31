@@ -138,6 +138,70 @@ def run_knn_regression_comparison(X_train, X_test, y_train, y_test, k=5):
             "metrics": calculate_regression_metrics([], [])
         }
 
+def run_svr_comparison(X_train, X_test, y_train, y_test):
+    """
+    Run Support Vector Regression and return metrics
+    """
+    try:
+        from sklearn.svm import SVR
+        from sklearn.preprocessing import StandardScaler
+        
+        # Scale the data since SVR is sensitive to feature scales
+        scaler_X = StandardScaler()
+        scaler_y = StandardScaler()
+        
+        X_train_scaled = scaler_X.fit_transform(X_train)
+        X_test_scaled = scaler_X.transform(X_test)
+        y_train_scaled = scaler_y.fit_transform(y_train.values.reshape(-1, 1)).ravel()
+        
+        # Try different hyperparameters
+        best_score = -float('inf')
+        best_metrics = None
+        best_params = None
+        
+        param_combinations = [
+            {'kernel': 'linear', 'C': 1.0, 'epsilon': 0.1},
+            {'kernel': 'rbf', 'C': 1.0, 'epsilon': 0.1},
+            {'kernel': 'linear', 'C': 10.0, 'epsilon': 0.01},
+            {'kernel': 'rbf', 'C': 10.0, 'epsilon': 0.01}
+        ]
+        
+        for params in param_combinations:
+            try:
+                model = SVR(**params)
+                model.fit(X_train_scaled, y_train_scaled)
+                y_pred_scaled = model.predict(X_test_scaled)
+                
+                # Transform predictions back to original scale
+                y_pred = scaler_y.inverse_transform(y_pred_scaled.reshape(-1, 1)).ravel()
+                
+                metrics = calculate_regression_metrics(y_test, y_pred)
+                
+                if metrics["r2_score"] > best_score:
+                    best_score = metrics["r2_score"]
+                    best_metrics = metrics
+                    best_params = params
+                    
+            except Exception as param_e:
+                continue
+        
+        if best_metrics is None:
+            raise Exception("All SVR parameter combinations failed")
+        
+        return {
+            "algorithm": "Support Vector Regression",
+            "status": "success",
+            "metrics": best_metrics,
+            "model_params": best_params
+        }
+    except Exception as e:
+        return {
+            "algorithm": "Support Vector Regression",
+            "status": "error",
+            "error": str(e),
+            "metrics": calculate_regression_metrics([], [])
+        }
+
 def compare_regression_algorithms(df, feature_cols=None, target_col=None, test_size=0.2, random_state=42):
     """
     Compare all available regression algorithms and return results with rankings
@@ -185,6 +249,10 @@ def compare_regression_algorithms(df, feature_cols=None, target_col=None, test_s
         # KNN Regression
         knn_result = run_knn_regression_comparison(X_train, X_test, y_train, y_test)
         results.append(knn_result)
+        
+        # Support Vector Regression
+        svr_result = run_svr_comparison(X_train, X_test, y_train, y_test)
+        results.append(svr_result)
         
         # Sort by R² score (descending)
         successful_results = [r for r in results if r["status"] == "success"]
