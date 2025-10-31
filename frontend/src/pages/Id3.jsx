@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, useRef } from "react";
 import { BlockMath, InlineMath } from "react-katex";
 import "katex/dist/katex.min.css";
 
@@ -9,6 +9,308 @@ const Card = ({ children, className = "" }) => (
     {children}
   </div>
 );
+
+// Interactive Decision Tree Visualization Component
+const DecisionTreeVisualization = ({ result, currentStep, isInStep = false }) => {
+  const [hoveredNode, setHoveredNode] = useState(null);
+  const [selectedNode, setSelectedNode] = useState(null);
+  const svgRef = useRef(null);
+
+  if (!result?.steps) {
+    return null;
+  }
+
+  // Build tree structure from steps
+  const buildTreeStructure = () => {
+    const nodes = [];
+    const links = [];
+    
+    // Root node
+    const rootSplit = result.steps.find(s => s.formula_id === "split_choose_feature");
+    const rootFeature = rootSplit?.context?.chosen_feature || "Root";
+    
+    nodes.push({
+      id: "root",
+      label: rootFeature,
+      type: "split",
+      x: 400,
+      y: 70,
+      level: 0,
+      info: {
+        feature: rootFeature,
+        gain: rootSplit?.context?.candidates?.find(([f]) => f === rootFeature)?.[1] || 0
+      }
+    });
+
+    // Add child nodes based on feature values
+    const gainSteps = result.steps.filter(s => s.formula_id === "gain_feature_breakdown");
+    let nodeId = 1;
+    
+    gainSteps.forEach((step, idx) => {
+      const feature = step.context?.feature;
+      const parts = step.vars?.parts || [];
+      
+      if (feature === rootFeature && parts.length > 0) {
+        // Calculate proper spacing based on number of children
+        const totalWidth = 600; // Available width for children
+        const nodeWidth = 140; // Width of each node
+        const minSpacing = 20; // Minimum spacing between nodes
+        
+        let childSpacing;
+        if (parts.length === 1) {
+          childSpacing = 0;
+        } else {
+          childSpacing = Math.max(
+            minSpacing + nodeWidth,
+            totalWidth / (parts.length - 1)
+          );
+        }
+        
+        // Calculate starting position to center the children
+        const startX = parts.length === 1 
+          ? 400 
+          : 400 - ((parts.length - 1) * childSpacing) / 2;
+        
+        parts.forEach((part, partIdx) => {
+          const childX = startX + (partIdx * childSpacing);
+          const childY = 220; // Increased vertical spacing
+          
+          // Determine if this is a leaf node
+          const isLeaf = part.size <= 2 || Object.keys(part.class_counts).length === 1;
+          const majorityClass = Object.entries(part.class_counts)
+            .reduce((a, b) => a[1] > b[1] ? a : b)[0];
+          
+          const childNode = {
+            id: `node_${nodeId}`,
+            label: isLeaf ? majorityClass : `${part.value}`,
+            type: isLeaf ? "leaf" : "split",
+            x: childX,
+            y: childY,
+            level: 1,
+            value: part.value,
+            info: {
+              samples: part.size,
+              entropy: part.entropy,
+              classes: part.class_counts,
+              majorityClass: majorityClass
+            }
+          };
+          
+          nodes.push(childNode);
+          
+          // Add link from root to child
+          links.push({
+            source: "root",
+            target: `node_${nodeId}`,
+            label: String(part.value),
+            condition: `${rootFeature} = ${part.value}`
+          });
+          
+          nodeId++;
+        });
+      }
+    });
+
+    return { nodes, links };
+  };
+
+  const { nodes, links } = buildTreeStructure();
+
+  const containerClass = isInStep 
+    ? "bg-linear-to-br from-white/5 to-white/10 backdrop-blur-md rounded-xl p-2 border border-white/20 shadow-2xl h-full"
+    : "bg-linear-to-br from-white/10 to-white/5 backdrop-blur-sm rounded-2xl p-6 mb-6 shadow-xl ring-1 ring-white/20";
+
+  return (
+    <div className={containerClass}>
+      {!isInStep && (
+        <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+          <span className="text-2xl">🌳</span>
+          Interactive Decision Tree
+        </h2>
+      )}
+      <div className="bg-white rounded-xl p-2 border border-gray-200 shadow-inner h-full">
+        <div className="w-full h-full min-h-[400px]">
+          <svg 
+            ref={svgRef}
+            viewBox="0 0 800 350" 
+            className="w-full h-full"
+            style={{ maxHeight: isInStep ? '400px' : '500px' }}
+          >
+            {/* Define markers for arrowheads */}
+            <defs>
+              <marker
+                id="arrowhead"
+                markerWidth="10"
+                markerHeight="7"
+                refX="9"
+                refY="3.5"
+                orient="auto"
+              >
+                <polygon
+                  points="0 0, 10 3.5, 0 7"
+                  fill="#6b7280"
+                />
+              </marker>
+            </defs>
+
+            {/* Links */}
+            {links.map((link, idx) => {
+              const sourceNode = nodes.find(n => n.id === link.source);
+              const targetNode = nodes.find(n => n.id === link.target);
+              
+              if (!sourceNode || !targetNode) return null;
+              
+              return (
+                <g key={`link-${idx}`}>
+                  <line
+                    x1={sourceNode.x}
+                    y1={sourceNode.y + 30}
+                    x2={targetNode.x}
+                    y2={targetNode.y - 30}
+                    stroke="#6b7280"
+                    strokeWidth="2"
+                    markerEnd="url(#arrowhead)"
+                  />
+                  {/* Edge label */}
+                  <text
+                    x={(sourceNode.x + targetNode.x) / 2}
+                    y={(sourceNode.y + targetNode.y) / 2 - 10}
+                    textAnchor="middle"
+                    className="text-xs fill-gray-600 font-medium"
+                  >
+                    {link.label}
+                  </text>
+                </g>
+              );
+            })}
+
+            {/* Nodes */}
+            {nodes.map((node, idx) => (
+              <g 
+                key={`node-${idx}`}
+                onMouseEnter={() => setHoveredNode(node)}
+                onMouseLeave={() => setHoveredNode(null)}
+                onClick={() => setSelectedNode(selectedNode?.id === node.id ? null : node)}
+                className="cursor-pointer"
+              >
+                {/* Node background */}
+                <rect
+                  x={node.x - 70}
+                  y={node.y - 30}
+                  width="140"
+                  height="60"
+                  rx="12"
+                  fill={
+                    node.type === "leaf" 
+                      ? (hoveredNode?.id === node.id ? "#10b981" : "#34d399")
+                      : (hoveredNode?.id === node.id ? "#3b82f6" : "#60a5fa")
+                  }
+                  stroke={selectedNode?.id === node.id ? "#1f2937" : "transparent"}
+                  strokeWidth="3"
+                  className="transition-all duration-200 drop-shadow-lg"
+                />
+                
+                {/* Node label */}
+                <text
+                  x={node.x}
+                  y={node.y - 8}
+                  textAnchor="middle"
+                  className="text-sm font-semibold fill-white"
+                >
+                  {node.label.length > 12 ? node.label.substring(0, 10) + "..." : node.label}
+                </text>
+                
+                {/* Node info */}
+                <text
+                  x={node.x}
+                  y={node.y + 8}
+                  textAnchor="middle"
+                  className="text-xs fill-white/90"
+                >
+                  {node.value && `Val: ${node.value}`}
+                </text>
+                
+                {/* Additional info */}
+                <text
+                  x={node.x}
+                  y={node.y + 20}
+                  textAnchor="middle"
+                  className="text-xs fill-white/80"
+                >
+                  {node.type === "leaf" 
+                    ? `${node.info.samples} samples`
+                    : `Gain: ${node.info.gain ? round(node.info.gain, 3) : '—'}`
+                  }
+                </text>
+              </g>
+            ))}
+          </svg>
+        </div>
+
+        {/* Node Details Panel */}
+        {(hoveredNode || selectedNode) && (
+          <div className="mt-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <h4 className="font-semibold text-gray-800 mb-2">
+                  {(hoveredNode || selectedNode).type === "leaf" ? "Leaf Node" : "Split Node"}
+                </h4>
+                <div className="text-sm text-gray-600 space-y-1">
+                  <div><strong>Label:</strong> {(hoveredNode || selectedNode).label}</div>
+                  {(hoveredNode || selectedNode).value && (
+                    <div><strong>Value:</strong> {(hoveredNode || selectedNode).value}</div>
+                  )}
+                  <div><strong>Samples:</strong> {(hoveredNode || selectedNode).info.samples || '—'}</div>
+                </div>
+              </div>
+              <div>
+                <h4 className="font-semibold text-gray-800 mb-2">Statistics</h4>
+                <div className="text-sm text-gray-600 space-y-1">
+                  {(hoveredNode || selectedNode).info.entropy !== undefined && (
+                    <div><strong>Entropy:</strong> {round((hoveredNode || selectedNode).info.entropy, 3)}</div>
+                  )}
+                  {(hoveredNode || selectedNode).info.gain && (
+                    <div><strong>Gain:</strong> {round((hoveredNode || selectedNode).info.gain, 3)}</div>
+                  )}
+                  {(hoveredNode || selectedNode).info.classes && (
+                    <div>
+                      <strong>Classes:</strong>
+                      <div className="mt-1 flex flex-wrap gap-1">
+                        {Object.entries((hoveredNode || selectedNode).info.classes).map(([cls, count]) => (
+                          <span key={cls} className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">
+                            {cls}: {count}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+      
+      <div className="mt-3 text-center">
+        <div className="flex justify-center items-center gap-6 text-xs text-white/90 font-medium">
+          <div className="flex items-center gap-2">
+            <div className="w-3 h-3 bg-blue-400 rounded-sm shadow-lg border border-blue-300"></div>
+            <span>Split Nodes</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-3 h-3 bg-green-400 rounded-sm shadow-lg border border-green-300"></div>
+            <span>Leaf Nodes</span>
+          </div>
+        </div>
+        {!isInStep && (
+          <p className="text-white/70 text-xs mt-2">
+            Click on nodes to see detailed information • Hover for quick stats
+          </p>
+        )}
+      </div>
+    </div>
+  );
+};
 
 const round = (x, d = 6) =>
   typeof x === "number" ? Number.parseFloat(x.toFixed(d)) : x;
@@ -194,7 +496,7 @@ export default function Id3AutoRunner() {
       case "gain_feature_breakdown":
         return <GainFeatureBreakdown step={step} />;
       case "split_choose_feature":
-        return <SplitChooseFeature step={step} />;
+        return <SplitChooseFeature step={step} result={result} currentStep={currentStep} />;
       default:
         return <GenericStep step={step} />;
     }
@@ -353,6 +655,13 @@ export default function Id3AutoRunner() {
                 </div>
               )}
             </Card>
+
+            {/* Interactive Decision Tree */}
+            <DecisionTreeVisualization 
+              result={result} 
+              currentStep={currentStep} 
+              isInStep={false}
+            />
 
             {/* Steps */}
             {result.steps && result.steps.length > 0 && (
@@ -544,45 +853,55 @@ function GainFeatureBreakdown({ step }) {
   );
 }
 
-function SplitChooseFeature({ step }) {
+function SplitChooseFeature({ step, result, currentStep }) {
   const chosen = step?.context?.chosen_feature;
   const cands = step?.context?.candidates || [];
   
   return (
-    <Card>
-      <div className="text-left">
-        <h3 className="text-xl font-bold text-white mb-4">🎯 Feature Selection</h3>
-        <p className="text-white/80 mb-4">
-          Choose the feature with the highest information gain for splitting.
-        </p>
-        
-        <div className="bg-white/5 rounded-xl p-4 border border-white/10">
-          <div className="text-sm text-white/70 mb-3 font-medium">Candidate Features:</div>
-          <div className="space-y-2">
-            {cands.map(([f, g], i) => (
-              <div key={i} className={`flex justify-between items-center p-3 rounded-lg ${
-                f === chosen 
-                  ? 'bg-emerald-600/20 border border-emerald-400/30' 
-                  : 'bg-white/5 border border-white/10'
-              }`}>
-                <div className="flex items-center gap-2">
-                  <span className="font-mono text-blue-300">{f}</span>
-                  {f === chosen && <span className="text-emerald-300 text-lg">★</span>}
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <Card>
+        <div className="text-left">
+          <h3 className="text-xl font-bold text-white mb-4">🎯 Feature Selection</h3>
+          <p className="text-white/80 mb-4">
+            Choose the feature with the highest information gain for splitting.
+          </p>
+          
+          <div className="bg-white/5 rounded-xl p-4 border border-white/10">
+            <div className="text-sm text-white/70 mb-3 font-medium">Candidate Features:</div>
+            <div className="space-y-2">
+              {cands.map(([f, g], i) => (
+                <div key={i} className={`flex justify-between items-center p-3 rounded-lg ${
+                  f === chosen 
+                    ? 'bg-emerald-600/20 border border-emerald-400/30' 
+                    : 'bg-white/5 border border-white/10'
+                }`}>
+                  <div className="flex items-center gap-2">
+                    <span className="font-mono text-blue-300">{f}</span>
+                    {f === chosen && <span className="text-emerald-300 text-lg">★</span>}
+                  </div>
+                  <div className="font-mono text-white font-bold">{round(g, 3)}</div>
                 </div>
-                <div className="font-mono text-white font-bold">{round(g, 3)}</div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
+          
+          {chosen && (
+            <div className="bg-emerald-600/20 rounded-xl p-4 mt-4 border border-emerald-400/30">
+              <div className="text-emerald-200 font-medium">Selected Root Feature:</div>
+              <div className="font-mono text-emerald-100 text-xl font-bold">{chosen}</div>
+            </div>
+          )}
         </div>
-        
-        {chosen && (
-          <div className="bg-emerald-600/20 rounded-xl p-4 mt-4 border border-emerald-400/30">
-            <div className="text-emerald-200 font-medium">Selected Root Feature:</div>
-            <div className="font-mono text-emerald-100 text-xl font-bold">{chosen}</div>
-          </div>
-        )}
+      </Card>
+      
+      <div className="lg:h-[500px]">
+        <DecisionTreeVisualization 
+          result={result} 
+          currentStep={currentStep} 
+          isInStep={true}
+        />
       </div>
-    </Card>
+    </div>
   );
 }
 
