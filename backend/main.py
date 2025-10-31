@@ -3,6 +3,11 @@ from fastapi import FastAPI, UploadFile, File, Form, HTTPException
 from fastapi.responses import JSONResponse
 from pathlib import Path
 import pandas as pd
+from typing import Optional, Literal, Dict, Any, List
+from pydantic import BaseModel
+import math
+import json
+import glob
 from pandas.api.types import (
     is_bool_dtype,
     is_object_dtype,
@@ -113,6 +118,17 @@ def label_peek(s: pd.Series, top_k: int = 10):
     vc = s.astype("string").value_counts(dropna=True).head(top_k)
     return [{"label": k, "count": int(v)} for k, v in vc.items()]
 
+def find_dataset_path(dataset_id: str) -> Path:
+    """
+    Resolve saved CSV path from dataset_id. We saved as:
+      uploads/<dataset_id>__<original>.csv
+    This finds the matching file safely without needing a DB (for now).
+    """
+    pattern = str(UPLOAD_DIR / f"{dataset_id}__*.csv")
+    matches = glob.glob(pattern)
+    if not matches:
+        raise HTTPException(status_code=404, detail="dataset_id not found")
+    return Path(matches[0])
 
 @app.post("/datasets")
 async def upload_and_analyze_dataset(
@@ -192,3 +208,45 @@ async def upload_and_analyze_dataset(
             resp["suggested_algorithms"] = []
 
     return JSONResponse(resp, status_code=201)
+
+class CalcRequest(BaseModel):
+    algorithm: Literal["id3", "naive_bayes","linear_regression"]   
+    dataset_id: str
+    params: Optional[Dict[str, Any]] = None
+
+@app.post("/calculation")
+async def calculate(req: CalcRequest):
+    """
+    Resolve dataset by dataset_id, load CSV, dispatch to algorithm runner,
+    and return a consistent steps payload your frontend can render.
+    """
+    csv_path = find_dataset_path(req.dataset_id)
+
+    try:
+        df = pd.read_csv(csv_path)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Failed to read dataset: {e}")
+
+    params = req.params or {}
+
+    if req.algorithm == "id3":
+        result = run_id3_root(df, params)
+    elif req.algorithm == "naive_bayes":
+        result = run_naive_bayes(df, params)
+    else:
+        raise HTTPException(status_code=400, detail="Unsupported algorithm")
+
+    run_id = uuid.uuid4().hex
+    for i, s in enumerate(result["steps"], start=1):
+        s["run_id"] = run_id
+        s["step_id"] = i
+
+    return JSONResponse({
+        "run_id": run_id,
+        "algorithm": req.algorithm,
+        "dataset_id": req.dataset_id,
+        "steps": result["steps"],
+        "tree": result.get("tree"),  
+    })
+
+
