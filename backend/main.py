@@ -10,11 +10,23 @@ from pandas.api.types import (
     is_numeric_dtype,
     CategoricalDtype,  
 )
+from fastapi.middleware.cors import CORSMiddleware
 
 import uuid, shutil, re
 
 app = FastAPI(title="CSV Upload + Inline Target Analysis")
+origins = [
+    "http://localhost:5173",
+    
+]
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,       
+    allow_credentials=True,      
+    allow_methods=["*"],          
+    allow_headers=["*"],         
+)
 UPLOAD_DIR = Path("uploads")
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
