@@ -18,6 +18,7 @@ import glob
 from linear_regression import run_linear_regression
 from id3 import compute_id3_root_steps
 from knn_regression import run_knn_regression
+from naive_bayes import run_naive_bayes
 from algorithm_comparison import compare_regression_algorithms
 from pandas.api.types import (
     is_bool_dtype,
@@ -230,61 +231,32 @@ async def knn_regression(req: KNNRegressionRequest = Body(...)):
     })
 
 
+class NaiveBayesRequest(BaseModel):
+    dataset_id: str
+    params: Optional[Dict[str, Any]] = None
+
 @app.post("/naivebayes")
-async def naive_bayes(request: Request):
-    body = await request.json()
-    dataset_id = body.get("dataset_id")
-    params = body.get("params", {})
-    target = params.get("target")
-    example = params.get("example", {})
-
-    if not dataset_id or not target or not example:
-        raise HTTPException(status_code=400, detail="Missing dataset_id, target, or example")
-
-    csv_path = find_dataset_path(dataset_id)
+async def naive_bayes_route(req: NaiveBayesRequest = Body(...)):
+    csv_path = find_dataset_path(req.dataset_id)
     df = read_tabular_file(csv_path)
-
-    if target not in df.columns:
-        raise HTTPException(status_code=400, detail=f"Target '{target}' not found")
-
-    steps = []
-    priors = df[target].value_counts(normalize=True).to_dict()
-    steps.append({"step": 1, "title": "Calculate prior probabilities", "result": {"priors": priors}})
-
-    details = defaultdict(lambda: defaultdict(dict))
-    for cls in df[target].unique():
-        subset = df[df[target] == cls]
-        for feature in df.columns:
-            if feature == target:
-                continue
-            probs = subset[feature].value_counts(normalize=True).to_dict()
-            details[cls][feature] = probs
-
-    steps.append({"step": 2, "title": "Calculate conditional probabilities", "result": {"details": details}})
-
-    per_class = {}
-    for cls, prior in priors.items():
-        prob = prior
-        multipliers = []
-        for feature, value in example.items():
-            feature_probs = details[cls].get(feature, {})
-            p = feature_probs.get(value, 1e-6)
-            prob *= p
-            multipliers.append({"feature": feature, "value": value, "p": p})
-        per_class[cls] = {"unnormalized": prob, "multipliers": multipliers}
-
-    steps.append({"step": 3, "title": "Multiply prior with conditional probabilities", "result": {"per_class": per_class}})
-
-    total = sum(v["unnormalized"] for v in per_class.values())
-    posteriors = {cls: v["unnormalized"] / total for cls, v in per_class.items()}
-
-    steps.append({"step": 4, "title": "Normalize to get posterior probabilities", "vars": {"evidence": total}, "result": {"posteriors": posteriors}})
-
-    predicted = max(posteriors, key=posteriors.get)
-    confidence = posteriors[predicted]
-    steps.append({"step": 5, "title": "Final Prediction", "result": {"predicted": predicted, "confidence": confidence}})
-
-    return {"dataset_preview": df.head(5).to_dict(orient="records"), "steps": steps}
+    
+    params = req.params or {}
+    result = run_naive_bayes(df, params)
+    
+    run_id = uuid.uuid4().hex
+    for i, s in enumerate(result["steps"], start=1):
+        s["run_id"] = run_id
+        s["step_id"] = i
+    
+    return JSONResponse({
+        "run_id": run_id,
+        "algorithm": "naive_bayes",
+        "dataset_id": req.dataset_id,
+        "steps": result["steps"],
+        "summary": result.get("summary"),
+        "dataset_preview": result.get("dataset_preview"),
+        "metadata": result.get("metadata"),
+    })
 
 # -----------------------------------------------------------
 # Algorithm Comparison for Regression
