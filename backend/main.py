@@ -132,7 +132,7 @@ def _evaluate_classification(df: pd.DataFrame, target: str):
         "id3": DecisionTreeClassifier(criterion="entropy", random_state=42),
         # GaussianNB tolerates real-valued features (post-scaling); avoids negatives issue in MultinomialNB
         "naive_bayes": GaussianNB(),
-        "knn": KNeighborsClassifier(n_neighbors=5),
+        "knn_classification": KNeighborsClassifier(n_neighbors=5),
     }
 
     results = []
@@ -444,7 +444,7 @@ async def knn_classification_route(req: KNNClassificationRequest = Body(...)):
     
     return JSONResponse({
         "run_id": run_id,
-        "algorithm": "knn_classification",
+        "algorithm": "knn",
         "dataset_id": req.dataset_id,
         "steps": result["steps"],
         "summary": result.get("summary"),
