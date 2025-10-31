@@ -8,6 +8,12 @@ import pandas as pd
 from fastapi import HTTPException
 import json
 import os
+import uuid
+import shutil
+import io
+from collections import defaultdict
+
+import re
 from svr import run_svr
 import glob
 from linear_regression import run_linear_regression
@@ -129,7 +135,7 @@ async def upload_and_analyze_dataset(
             resp["label_preview"] = label_peek(df[target])
             resp["suggested_algorithms"] = ["id3", "naive_bayes", "knn"]
         elif info["inferred"] == "regression":
-            resp["suggested_algorithms"] = ["cart_regression","support vector regression", "linear_regression"]
+            resp["suggested_algorithms"] = ["knn_regression","support vector regression", "linear_regression"]
         else:
             resp["suggested_algorithms"] = []
 

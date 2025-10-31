@@ -106,30 +106,39 @@ function Home() {
   };
 
   // ✅ Handle algorithm click
-  const handleAlgorithmSelect = (algo) => {
-    localStorage.setItem("selectedAlgorithm", algo.toLowerCase());
-    if (algo.toLowerCase() === "naive_bayes") {
+  // ✅ Handle algorithm click (fixed braces + robust mapping)
+const handleAlgorithmSelect = (algo) => {
+  const key = String(algo).toLowerCase().trim().replace(/\s+/g, "_");
+  localStorage.setItem("selectedAlgorithm", key);
+
+  switch (key) {
+    case "naive_bayes":
       navigate("/naiveBayes");
-    } else if (
-      algo.toLowerCase() === "linear_regression" ||
-      algo.toLowerCase() === "simple_linear_regression"
-    ) {
+      break;
+
+    case "linear_regression":
+    case "simple_linear_regression":
       navigate("/simpleLinearRegression");
-    } 
-    else if (algo.toLowerCase() === "knn_regression") {
+      break;
+
+    case "knn_regression":
       navigate("/knnRegression");
-    else if(algo.toLowerCase() === "support vector regression"){
-        navigate("/svr");
-    }
-    else if (
-      algo.toLowerCase() === "id3" 
-    ) {
+      break;
+
+    case "support_vector_regression":
+    case "svr":
+      navigate("/svr");
+      break;
+
+    case "id3":
       navigate("/id3");
-    } 
-    else {
+      break;
+
+    default:
       alert(`No page setup for ${algo}`);
-    }
-  };
+  }
+};
+
 
   return (
     <main className="min-h-screen w-full bg-gradient-to-br from-sky-700 via-blue-700 to-emerald-600 flex items-center justify-center px-6">

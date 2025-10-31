@@ -33,7 +33,9 @@ export default function NaiveBayesPage() {
       try {
         const meta = JSON.parse(metaRaw);
         setColumns(meta.columns || []);
-      } catch {}
+      } catch(e) {
+       console.log(e)
+      }
     }
   }, []);
 
