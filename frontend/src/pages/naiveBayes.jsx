@@ -5,32 +5,6 @@ import { InlineMath, BlockMath } from "react-katex";
 
 const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:8000";
 
-const Card = ({ children, className = "" }) => (
-  <div className={`rounded-2xl border border-white/10 bg-white/5 backdrop-blur-md p-6 shadow-xl ${className}`}>
-    {children}
-  </div>
-);
-
-const StepNavigation = ({ currentStep, totalSteps, onStepChange }) => (
-  <div className="flex justify-center space-x-2 mb-6">
-    {Array.from({ length: totalSteps }, (_, i) => (
-      <button
-        key={i}
-        onClick={() => onStepChange(i)}
-        className={`w-10 h-10 rounded-full font-medium transition-all ${
-          i === currentStep
-            ? "bg-blue-600 text-white shadow-lg scale-110"
-            : i < currentStep
-            ? "bg-green-600/50 text-white hover:bg-green-600/70"
-            : "bg-white/10 text-white/60 hover:bg-white/20"
-        }`}
-      >
-        {i + 1}
-      </button>
-    ))}
-  </div>
-);
-
 const round = (x, d = 4) =>
   typeof x === "number" ? Number.parseFloat(x.toFixed(d)) : x;
 
@@ -40,8 +14,11 @@ function DatasetPreview({ data }) {
   const columns = Object.keys(data[0]);
   
   return (
-    <Card>
-      <h3 className="text-xl font-bold text-white mb-4">📊 Dataset Preview</h3>
+    <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 mb-6 shadow-xl ring-1 ring-white/10">
+      <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+        <span className="text-2xl">📊</span>
+        Dataset Preview
+      </h3>
       <div className="overflow-x-auto">
         <table className="min-w-full text-sm">
           <thead>
@@ -66,7 +43,7 @@ function DatasetPreview({ data }) {
           </tbody>
         </table>
       </div>
-    </Card>
+    </div>
   );
 }
 
@@ -252,15 +229,13 @@ function StepRenderer({ step, currentStep }) {
   };
 
   return (
-    <Card>
-      <div className="text-left">
-        <h3 className="text-xl font-bold text-white mb-2">
-          Step {step.step_number}: {step.title}
-        </h3>
-        <p className="text-white/80 mb-4">{step.description}</p>
-        {renderStepContent()}
-      </div>
-    </Card>
+    <div className="text-left">
+      <h3 className="text-xl font-bold text-white mb-2">
+        Step {step.step_number}: {step.title}
+      </h3>
+      <p className="text-white/80 mb-4">{step.description}</p>
+      {renderStepContent()}
+    </div>
   );
 }
 
@@ -270,6 +245,7 @@ function NaiveBayes() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [currentStep, setCurrentStep] = useState(0);
+  const [showAllSteps, setShowAllSteps] = useState(false);
   const [datasetId, setDatasetId] = useState("");
   const [testExample, setTestExample] = useState({});
   const [columns, setColumns] = useState([]);
@@ -303,6 +279,26 @@ function NaiveBayes() {
       setTestExample(initialExample);
     }
   }, [columns]);
+
+  // Handle keyboard navigation
+  useEffect(() => {
+    const handleKeyPress = (event) => {
+      if (showAllSteps) return; // Don't navigate when showing all steps
+      
+      if (event.key === 'ArrowRight' || event.key === ' ') {
+        event.preventDefault();
+        setCurrentStep(prev => Math.min(prev + 1, (result?.steps?.length || 1) - 1));
+      } else if (event.key === 'ArrowLeft') {
+        event.preventDefault();
+        setCurrentStep(prev => Math.max(prev - 1, 0));
+      } else if (event.key === 'Escape') {
+        setShowAllSteps(true);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyPress);
+    return () => window.removeEventListener('keydown', handleKeyPress);
+  }, [result?.steps?.length, showAllSteps]);
 
   const runNaiveBayes = async () => {
     if (!datasetId) {
@@ -350,31 +346,64 @@ function NaiveBayes() {
     }));
   };
 
-  return (
-    <main className="min-h-screen w-full bg-gradient-to-br from-sky-700 via-blue-700 to-emerald-600 text-white p-6">
-      <div className="max-w-6xl mx-auto">
-        {/* Header */}
-        <div className="flex justify-between items-center mb-8">
-          <div>
-            <h1 className="text-4xl font-extrabold tracking-tight mb-2">
-              🧠 Naive Bayes Classification
-            </h1>
-            <p className="text-white/80">
-              Step-by-step probabilistic classification using Bayes' theorem
-            </p>
-          </div>
-          <button
-            onClick={() => navigate("/")}
-            className="px-6 py-3 bg-white/10 backdrop-blur-md rounded-xl border border-white/20 hover:bg-white/20 transition-all"
+  const nextStep = () => {
+    setCurrentStep(prev => Math.min(prev + 1, (result?.steps?.length || 1) - 1));
+  };
+
+  const prevStep = () => {
+    setCurrentStep(prev => Math.max(prev - 1, 0));
+  };
+
+  const toggleViewMode = () => {
+    setShowAllSteps(!showAllSteps);
+  };
+
+  if (loading) {
+    return (
+      <main className="min-h-screen w-full bg-linear-to-br from-sky-700 via-blue-700 to-emerald-600 flex items-center justify-center px-6">
+        <div className="text-center text-white">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4"></div>
+          <p className="text-lg font-semibold">Loading calculations...</p>
+        </div>
+      </main>
+    );
+  }
+
+  if (error) {
+    return (
+      <main className="min-h-screen w-full bg-linear-to-br from-sky-700 via-blue-700 to-emerald-600 flex items-center justify-center px-6">
+        <div className="text-center text-white max-w-md">
+          <h2 className="text-2xl font-bold mb-4">❌ Error</h2>
+          <p className="text-red-200 mb-6">{error}</p>
+          <button 
+            onClick={() => window.history.back()}
+            className="inline-flex items-center justify-center rounded-full bg-white/95 text-slate-900 font-semibold px-8 py-3 shadow-xl ring-1 ring-black/10 transition hover:scale-[1.02] hover:shadow-2xl active:scale-100"
           >
-            ← Back to Home
+            ← Go Back
           </button>
         </div>
+      </main>
+    );
+  }
+
+  return (
+    <main className="min-h-screen w-full bg-linear-to-br from-sky-700 via-blue-700 to-emerald-600 flex items-center justify-center px-6">
+      <div className="text-center max-w-6xl w-full">
+        <h1 className="text-white text-4xl md:text-6xl font-extrabold tracking-tight drop-shadow-[0_6px_20px_rgba(0,0,0,0.45)] mb-4">
+          Naive Bayes Classification
+        </h1>
+        
+        <p className="mt-4 text-white/85 mb-8">
+          Step-by-step probabilistic classification using Bayes' theorem
+        </p>
 
         {/* Test Example Input */}
         {columns.length > 0 && (
-          <Card className="mb-6">
-            <h3 className="text-xl font-bold text-white mb-4">🔍 Test Example</h3>
+          <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 mb-6 shadow-xl ring-1 ring-white/10">
+            <h3 className="text-xl font-bold text-white mb-4 flex items-center justify-center gap-2">
+              <span className="text-2xl">🔍</span>
+              Test Example
+            </h3>
             <p className="text-white/70 mb-4">
               Enter values for the features you want to classify:
             </p>
@@ -397,89 +426,144 @@ function NaiveBayes() {
             <button
               onClick={runNaiveBayes}
               disabled={loading || Object.values(testExample).some(v => !v)}
-              className="px-6 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed rounded-lg font-medium transition-all"
+              className="inline-flex items-center justify-center rounded-full bg-emerald-600 text-white font-semibold px-8 py-3 shadow-xl ring-1 ring-emerald-400/20 transition hover:scale-[1.02] hover:shadow-xl active:scale-100 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? "Running..." : "Classify Example"}
             </button>
-          </Card>
-        )}
-
-        {/* Error Display */}
-        {error && (
-          <Card className="mb-6 border-red-400/30 bg-red-600/10">
-            <div className="text-red-300">
-              <strong>Error:</strong> {error}
-            </div>
-          </Card>
+          </div>
         )}
 
         {/* Results */}
-        {result && (
+        {result && result.steps && result.steps.length > 0 && (
           <>
             {/* Dataset Preview */}
             {result.dataset_preview && (
-              <div className="mb-6">
-                <DatasetPreview data={result.dataset_preview} />
+              <DatasetPreview data={result.dataset_preview} />
+            )}
+
+            {/* Controls */}
+            <div className="flex justify-center items-center gap-4 mb-6">
+              <button
+                onClick={toggleViewMode}
+                className="inline-flex items-center justify-center rounded-full bg-white/20 text-white font-semibold px-6 py-2 shadow-lg ring-1 ring-white/20 transition hover:scale-[1.02] hover:shadow-xl active:scale-100"
+              >
+                {showAllSteps ? '📋 Step Mode' : '📄 All Steps'}
+              </button>
+              
+              {!showAllSteps && (
+                <>
+                  <div className="text-white/80 font-medium">
+                    Step {currentStep + 1} of {result.steps.length}
+                  </div>
+                  <div className="text-white/60 text-sm">
+                    Use ← → arrows or click buttons to navigate
+                  </div>
+                </>
+              )}
+            </div>
+
+            {/* Progress indicator for step mode */}
+            {!showAllSteps && result.steps.length > 0 && (
+              <div className="flex justify-center mb-6">
+                <div className="flex space-x-2">
+                  {result.steps.map((_, index) => (
+                    <button
+                      key={index}
+                      onClick={() => setCurrentStep(index)}
+                      className={`w-3 h-3 rounded-full transition-all ${
+                        index === currentStep 
+                          ? 'bg-white scale-125' 
+                          : index < currentStep 
+                            ? 'bg-emerald-400' 
+                            : 'bg-white/30'
+                      }`}
+                    />
+                  ))}
+                </div>
               </div>
             )}
 
-            {/* Step Navigation */}
-            {result.steps && result.steps.length > 0 && (
-              <>
-                <StepNavigation
-                  currentStep={currentStep}
-                  totalSteps={result.steps.length}
-                  onStepChange={setCurrentStep}
-                />
-
-                {/* Current Step */}
-                <div className="mb-6">
-                  <StepRenderer
-                    step={result.steps[currentStep]}
-                    currentStep={currentStep}
-                  />
+            {/* Steps - Show all or current step */}
+            <div className="space-y-6">
+              {showAllSteps ? (
+                // Show all steps
+                result.steps.map((step, idx) => (
+                  <div key={idx} className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 shadow-xl ring-1 ring-white/10">
+                    <StepRenderer step={step} currentStep={idx} />
+                  </div>
+                ))
+              ) : (
+                // Show current step only
+                <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 shadow-xl ring-1 ring-white/10 transform transition-all duration-300 scale-105">
+                  <StepRenderer step={result.steps[currentStep]} currentStep={currentStep} />
                 </div>
+              )}
+            </div>
 
-                {/* Navigation Buttons */}
-                <div className="flex justify-between mb-6">
-                  <button
-                    onClick={() => setCurrentStep(Math.max(0, currentStep - 1))}
-                    disabled={currentStep === 0}
-                    className="px-6 py-3 bg-white/10 backdrop-blur-md rounded-xl border border-white/20 hover:bg-white/20 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-                  >
-                    ← Previous Step
-                  </button>
-                  <button
-                    onClick={() => setCurrentStep(Math.min(result.steps.length - 1, currentStep + 1))}
-                    disabled={currentStep === result.steps.length - 1}
-                    className="px-6 py-3 bg-white/10 backdrop-blur-md rounded-xl border border-white/20 hover:bg-white/20 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-                  >
-                    Next Step →
-                  </button>
+            {/* Navigation buttons for step mode */}
+            {!showAllSteps && result.steps.length > 0 && (
+              <div className="flex justify-center items-center gap-4 mt-8">
+                <button
+                  onClick={prevStep}
+                  disabled={currentStep === 0}
+                  className="inline-flex items-center justify-center rounded-full bg-white/20 text-white font-semibold px-6 py-3 shadow-lg ring-1 ring-white/20 transition hover:scale-[1.02] hover:shadow-xl active:scale-100 disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  ← Previous
+                </button>
+                
+                <div className="bg-white/10 rounded-full px-4 py-2 text-white font-medium">
+                  {currentStep + 1} / {result.steps.length}
                 </div>
+                
+                <button
+                  onClick={nextStep}
+                  disabled={currentStep === result.steps.length - 1}
+                  className="inline-flex items-center justify-center rounded-full bg-emerald-600 text-white font-semibold px-6 py-3 shadow-lg ring-1 ring-emerald-400/20 transition hover:scale-[1.02] hover:shadow-xl active:scale-100 disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  Next →
+                </button>
+              </div>
+            )}
 
-                {/* Summary */}
-                {result.summary && (
-                  <Card>
-                    <h3 className="text-xl font-bold text-white mb-4">📋 Summary</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <div><span className="text-white/70">Algorithm:</span> <span className="font-mono text-blue-300">{result.summary.algorithm}</span></div>
-                        <div><span className="text-white/70">Prediction:</span> <span className="font-mono text-green-300">{result.summary.prediction}</span></div>
-                        <div><span className="text-white/70">Confidence:</span> <span className="font-mono text-yellow-300">{result.summary.confidence}%</span></div>
-                      </div>
-                      <div className="space-y-2">
-                        <div><span className="text-white/70">Dataset Size:</span> <span className="font-mono text-purple-300">{result.summary.dataset_size}</span></div>
-                        <div><span className="text-white/70">Features:</span> <span className="font-mono text-cyan-300">{result.summary.features_used?.join(", ")}</span></div>
-                        <div><span className="text-white/70">Classes:</span> <span className="font-mono text-pink-300">{result.summary.classes?.join(", ")}</span></div>
-                      </div>
-                    </div>
-                  </Card>
-                )}
-              </>
+            {/* Summary */}
+            {result.summary && (
+              <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 mt-6 shadow-xl ring-1 ring-white/10">
+                <h3 className="text-xl font-bold text-white mb-4 flex items-center justify-center gap-2">
+                  <span className="text-2xl">�</span>
+                  Final Summary
+                </h3>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-white">
+                  <div className="text-center">
+                    <div className="text-sm opacity-75">Prediction</div>
+                    <div className="font-bold text-lg text-emerald-300">{result.summary.prediction}</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-sm opacity-75">Confidence</div>
+                    <div className="font-bold text-lg text-yellow-300">{result.summary.confidence}%</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-sm opacity-75">Dataset Size</div>
+                    <div className="font-bold text-lg text-purple-300">{result.summary.dataset_size}</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-sm opacity-75">Classes</div>
+                    <div className="font-bold text-lg text-pink-300">{result.summary.classes?.length || 0}</div>
+                  </div>
+                </div>
+              </div>
             )}
           </>
         )}
+
+        {/* Back Button */}
+        <div className="text-center mt-8">
+          <button 
+            onClick={() => window.history.back()}
+            className="inline-flex items-center justify-center rounded-full bg-white/95 text-slate-900 font-semibold px-8 py-3 shadow-xl ring-1 ring-black/10 transition hover:scale-[1.02] hover:shadow-2xl active:scale-100"
+          >
+            ← Back to Home
+          </button>
+        </div>
       </div>
     </main>
   );
