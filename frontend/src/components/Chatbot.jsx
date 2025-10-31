@@ -7,7 +7,8 @@ const Chatbot = ({ onToggle }) => {
       id: 1,
       text: "Hi! I'm your ML-Tracer assistant. I can help you understand machine learning algorithms, interpret your results, or answer questions about your data analysis. How can I help you today?",
       isBot: true,
-      timestamp: new Date()
+      timestamp: new Date(),
+      sources: []
     }
   ]);
   const [inputMessage, setInputMessage] = useState('');
@@ -15,76 +16,82 @@ const Chatbot = ({ onToggle }) => {
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
 
-  // Scroll to bottom when new messages arrive
+  const API_URL = "http://localhost:3000/chat";
+
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
   useEffect(() => {
     scrollToBottom();
-  }, [messages]);
+  }, [messages, isTyping]);
 
-  // Focus input when chat opens
   useEffect(() => {
-    if (isOpen && inputRef.current) {
-      inputRef.current.focus();
-    }
+    if (isOpen && inputRef.current) inputRef.current.focus();
   }, [isOpen]);
 
-  // Simulate bot response (replace with actual API call)
+  // Real API call to your Flask endpoint
   const getBotResponse = async (userMessage) => {
     setIsTyping(true);
-    
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 1000 + Math.random() * 2000));
-    
-    // Mock responses based on keywords
-    let response = "I understand you're asking about machine learning. Could you be more specific about what you'd like to know?";
-    
-    const lowerMessage = userMessage.toLowerCase();
-    
-    if (lowerMessage.includes('linear regression')) {
-      response = "Linear regression is a statistical method that models the relationship between a dependent variable and independent variables. In simple linear regression, we find the best-fit line through data points using the equation y = mx + c. Would you like me to explain any specific part?";
-    } else if (lowerMessage.includes('naive bayes')) {
-      response = "Naive Bayes is a probabilistic classifier based on Bayes' theorem. It's called 'naive' because it assumes independence between features. It's particularly effective for text classification and spam detection. What aspect would you like me to explain further?";
-    } else if (lowerMessage.includes('id3') || lowerMessage.includes('decision tree')) {
-      response = "ID3 (Iterative Dichotomiser 3) is a decision tree algorithm that uses information gain to select the best attribute for splitting at each node. It creates a tree structure for classification problems. Would you like to know about information gain or entropy?";
-    } else if (lowerMessage.includes('r2') || lowerMessage.includes('r-squared')) {
-      response = "R² (R-squared) measures how well your regression model fits the data. It ranges from 0 to 1, where 1 means perfect fit. Values above 0.7 are generally considered good, but this depends on your domain. Your current model's R² can be found in the results section.";
-    } else if (lowerMessage.includes('accuracy') || lowerMessage.includes('performance')) {
-      response = "Model accuracy depends on the algorithm and data quality. For classification, we look at accuracy, precision, recall, and F1-score. For regression, we examine R², MSE, and residual plots. What specific metrics are you interested in?";
-    } else if (lowerMessage.includes('hello') || lowerMessage.includes('hi')) {
-      response = "Hello! I'm here to help with your machine learning journey. Are you working on a specific algorithm or do you have questions about your dataset results?";
-    } else if (lowerMessage.includes('help')) {
-      response = "I can help you with:\n• Understanding ML algorithms (Linear Regression, Naive Bayes, ID3)\n• Interpreting your results and metrics\n• Explaining mathematical formulas\n• Data preprocessing tips\n• Model evaluation\n\nWhat would you like to explore?";
+    try {
+      const res = await fetch(API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ query: userMessage })
+      });
+
+      if (!res.ok) {
+        // Try to read error JSON; otherwise use status text
+        let detail = `HTTP ${res.status}`;
+        try {
+          const j = await res.json();
+          detail = j.error || j.detail || detail;
+        } catch (e) {
+console.log(e);
+        }
+        throw new Error(detail);
+      }
+
+      const data = await res.json();
+      const answer = (data && typeof data.answer === "string")
+        ? data.answer.trim()
+        : "Sorry, I couldn’t parse a response.";
+
+      const sources = Array.isArray(data?.sources) ? data.sources : [];
+      return { answer, sources };
+    } catch (e) {
+      return {
+        answer: `⚠️ Error contacting the model: ${e.message}`,
+        sources: []
+      };
+    } finally {
+      setIsTyping(false);
     }
-    
-    setIsTyping(false);
-    return response;
   };
 
   const handleSendMessage = async () => {
-    if (!inputMessage.trim()) return;
+    const content = inputMessage.trim();
+    if (!content || isTyping) return;
 
     const userMessage = {
       id: Date.now(),
-      text: inputMessage,
+      text: content,
       isBot: false,
-      timestamp: new Date()
+      timestamp: new Date(),
+      sources: []
     };
-
     setMessages(prev => [...prev, userMessage]);
     setInputMessage('');
 
-    // Get bot response
-    const botResponse = await getBotResponse(inputMessage);
+    const { answer, sources } = await getBotResponse(content);
+
     const botMessage = {
       id: Date.now() + 1,
-      text: botResponse,
+      text: answer,
       isBot: true,
-      timestamp: new Date()
+      timestamp: new Date(),
+      sources
     };
-
     setMessages(prev => [...prev, botMessage]);
   };
 
@@ -98,12 +105,11 @@ const Chatbot = ({ onToggle }) => {
   const toggleChat = () => {
     const newState = !isOpen;
     setIsOpen(newState);
-    onToggle?.(newState); // Notify parent component about state change
+    onToggle?.(newState);
   };
 
   return (
     <>
-      {/* Floating Chat Button - Only show when chat is closed */}
       {!isOpen && (
         <button
           onClick={toggleChat}
@@ -115,17 +121,15 @@ const Chatbot = ({ onToggle }) => {
         </button>
       )}
 
-      {/* Overlay for responsive behavior */}
       {isOpen && (
         <div className="fixed inset-0 z-30 bg-black/20 backdrop-blur-sm lg:hidden" onClick={toggleChat} />
       )}
 
-      {/* Chat Side Panel */}
       {isOpen && (
         <div className={`fixed top-0 right-0 z-40 h-full transition-all duration-300 ease-in-out ${
           isOpen ? 'translate-x-0' : 'translate-x-full'
         } w-full lg:w-96 xl:w-md bg-white/95 backdrop-blur-lg shadow-2xl ring-1 ring-black/10 flex flex-col`}>
-          {/* Chat Header */}
+          {/* Header */}
           <div className="bg-linear-to-r from-blue-600 to-emerald-600 p-4 text-white">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
@@ -136,11 +140,9 @@ const Chatbot = ({ onToggle }) => {
                 </div>
                 <div>
                   <h3 className="font-semibold text-lg">ML Assistant</h3>
-                  <p className="text-white/80 text-sm">Ready to help with ML concepts</p>
+                  <p className="text-white/80 text-sm">Backed by your local RAG</p>
                 </div>
               </div>
-              
-              {/* Minimize Button */}
               <button
                 onClick={toggleChat}
                 className="p-2 hover:bg-white/20 rounded-full transition-colors duration-200"
@@ -153,13 +155,10 @@ const Chatbot = ({ onToggle }) => {
             </div>
           </div>
 
-          {/* Messages Area */}
+          {/* Messages */}
           <div className="flex-1 overflow-y-auto p-4 space-y-4">
             {messages.map((message) => (
-              <div
-                key={message.id}
-                className={`flex ${message.isBot ? 'justify-start' : 'justify-end'}`}
-              >
+              <div key={message.id} className={`flex ${message.isBot ? 'justify-start' : 'justify-end'}`}>
                 <div
                   className={`max-w-[80%] rounded-2xl px-4 py-3 ${
                     message.isBot
@@ -168,8 +167,23 @@ const Chatbot = ({ onToggle }) => {
                   }`}
                 >
                   <p className="text-sm whitespace-pre-line">{message.text}</p>
+                  {/* Source chips for bot messages */}
+                  {message.isBot && Array.isArray(message.sources) && message.sources.length > 0 && (
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      {message.sources.map((s, i) => (
+                        <span
+                          key={i}
+                          className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs bg-white/70 text-gray-800 border border-gray-300"
+                          title={s?.snippet || ''}
+                        >
+                          {/* show a short tag: id or first few words of question */}
+                          🧷 {s?.question ? (s.question.length > 28 ? s.question.slice(0, 28) + '…' : s.question) : (s?.id ?? `source-${i+1}`)}
+                        </span>
+                      ))}
+                    </div>
+                  )}
                   <p className={`text-xs mt-1 ${message.isBot ? 'text-gray-500' : 'text-white/70'}`}>
-                    {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    {new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                   </p>
                 </div>
               </div>
@@ -190,14 +204,14 @@ const Chatbot = ({ onToggle }) => {
             <div ref={messagesEndRef} />
           </div>
 
-          {/* Input Area */}
+          {/* Input */}
           <div className="p-4 border-t border-gray-200/50 bg-white/50">
             <div className="flex gap-2">
               <textarea
                 ref={inputRef}
                 value={inputMessage}
                 onChange={(e) => setInputMessage(e.target.value)}
-                onKeyPress={handleKeyPress}
+                onKeyDown={handleKeyPress}
                 placeholder="Ask about ML algorithms, results, or data..."
                 className="flex-1 resize-none rounded-xl border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white/80 backdrop-blur-sm"
                 rows={1}
@@ -211,6 +225,7 @@ const Chatbot = ({ onToggle }) => {
                 onClick={handleSendMessage}
                 disabled={!inputMessage.trim() || isTyping}
                 className="px-4 py-2 bg-linear-to-r from-blue-600 to-emerald-600 text-white rounded-xl font-medium shadow-lg transition hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                title="Send"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
