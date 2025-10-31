@@ -19,7 +19,7 @@ from sklearn.linear_model import LogisticRegression, LinearRegression
 from sklearn.naive_bayes import MultinomialNB
 from sklearn.svm import SVR
 import numpy as np
-
+from sklearn.naive_bayes import GaussianNB
 import uuid
 import shutil
 import io
@@ -121,28 +121,29 @@ def _evaluate_classification(df: pd.DataFrame, target: str):
     X = df[features]
     y = df[target]
 
-    # Train/test split (stratify when possible)
+    # Train/test split (stratify when feasible/safe)
     stratify = y if y.nunique() > 1 and y.value_counts().min() >= 2 else None
     X_train, X_test, y_train, y_test = train_test_split(
         X, y, test_size=0.2, random_state=42, stratify=stratify
     )
 
     models = {
-        "decision_tree": DecisionTreeClassifier(criterion="entropy", random_state=42),
-        "naive_bayes": MultinomialNB(),         # works well with OHE counts
+        "id3": DecisionTreeClassifier(criterion="entropy", random_state=42),
+        # GaussianNB tolerates real-valued features (post-scaling); avoids negatives issue in MultinomialNB
+        "naive_bayes": GaussianNB(),
         "knn": KNeighborsClassifier(n_neighbors=5),
-        # (Optional) "logistic_regression": LogisticRegression(max_iter=1000),
     }
 
     results = []
     for key, clf in models.items():
         pipe = Pipeline(steps=[
             ("pre", pre),
-            ("dense", to_dense),
+            ("dense", to_dense),  # ensure dense for KNN/NB
             ("model", clf),
         ])
         pipe.fit(X_train, y_train)
-        acc = accuracy_score(y_test, pipe.predict(X_test))
+        y_pred = pipe.predict(X_test)
+        acc = accuracy_score(y_test, y_pred)
         results.append({
             "algorithm": key,
             "metrics": {
@@ -152,7 +153,6 @@ def _evaluate_classification(df: pd.DataFrame, target: str):
             }
         })
 
-    # pick best by accuracy
     best = max(results, key=lambda r: r["metrics"]["accuracy"])
     return results, best["algorithm"]
 
@@ -267,9 +267,19 @@ async def upload_and_analyze_dataset(
     if target and target in df.columns:
         info = infer_target_type(df[target])
         resp["analysis"] = info
+        
         if info["inferred"] == "classification":
             resp["label_preview"] = label_peek(df[target])
             resp["suggested_algorithms"] = ["id3", "naive_bayes", "knn"]
+            try:
+                algos, best_alg = _evaluate_classification(df, target)
+                resp["algorithm_comparison"] = {
+                    "type": "classification",
+                    "algorithms": algos
+                }
+                resp["best_algorithm"] = best_alg
+            except Exception as e:
+             resp["algorithm_comparison_error"] = f"Classification benchmarking failed: {e}"
         elif info["inferred"] == "regression":
             resp["suggested_algorithms"] = ["knn_regression","support vector regression", "linear_regression"]
             
