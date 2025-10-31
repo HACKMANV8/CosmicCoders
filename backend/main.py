@@ -8,6 +8,7 @@ from pydantic import BaseModel
 import math
 import json
 import glob
+from id3 import compute_id3_root_steps
 from pandas.api.types import (
     is_bool_dtype,
     is_object_dtype,
@@ -214,30 +215,26 @@ class CalcRequest(BaseModel):
     dataset_id: str
     params: Optional[Dict[str, Any]] = None
 
-@app.post("/calculation")
+@app.post("/id3")
 async def calculate(req: CalcRequest):
-    """
-    Resolve dataset by dataset_id, load CSV, dispatch to algorithm runner,
-    and return a consistent steps payload your frontend can render.
-    """
     csv_path = find_dataset_path(req.dataset_id)
-
     try:
         df = pd.read_csv(csv_path)
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Failed to read dataset: {e}")
 
     params = req.params or {}
-
     if req.algorithm == "id3":
-        result = run_id3_root(df, params)
-    elif req.algorithm == "naive_bayes":
-        result = run_naive_bayes(df, params)
+        target = params.get("target")
+        features = params.get("features")
+        if not target:
+            raise HTTPException(status_code=400, detail="params.target is required for ID3")
+        out = compute_id3_root_steps(df, target=target, features=features)
     else:
         raise HTTPException(status_code=400, detail="Unsupported algorithm")
 
     run_id = uuid.uuid4().hex
-    for i, s in enumerate(result["steps"], start=1):
+    for i, s in enumerate(out["steps"], start=1):
         s["run_id"] = run_id
         s["step_id"] = i
 
@@ -245,8 +242,10 @@ async def calculate(req: CalcRequest):
         "run_id": run_id,
         "algorithm": req.algorithm,
         "dataset_id": req.dataset_id,
-        "steps": result["steps"],
-        "tree": result.get("tree"),  
+        "steps": out["steps"],
+        "best": out["best"],
+        "feature_summaries": out["feature_summaries"],
     })
+
 
 
