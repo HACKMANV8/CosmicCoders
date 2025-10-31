@@ -21,42 +21,39 @@ function Home() {
     setFileName(f.name);
   };
 
-  const uploadToBackend = async () => {
-    if (!fileRef.current?.files?.[0]) {
-      setError("Please select a file first.");
-      return;
+const uploadToBackend = async () => {
+  if (!fileRef.current?.files?.[0]) {
+    setError("Please select a file first.");
+    return;
+  }
+  const file = fileRef.current.files[0];
+  const formData = new FormData();
+  formData.append("file", file);                 
+  formData.append("name", file.name.replace(/\.csv$/i, "")); 
+  formData.append("target", "value");           
+
+  setIsLoading(true);
+  setError("");
+  setUploadSuccess(false);
+
+  try {
+    const response = await fetch("http://localhost:8000/datasets", {
+      method: "POST",
+      body: formData,
+    });
+    if (!response.ok) {
+      const txt = await response.text();
+      throw new Error(`${response.status} ${txt}`);
     }
-
-    const file = fileRef.current.files[0];
-    const formData = new FormData();
-    formData.append('csvFile', file);
-
-    setIsLoading(true);
-    setError("");
-    setUploadSuccess(false);
-
-    try {
-      const response = await fetch('http://localhost:8000/upload-csv', {
-        method: 'POST',
-        body: formData,
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const result = await response.json();
-      console.log('Upload successful:', result);
-      setUploadSuccess(true);
-      setError("");
-    } catch (err) {
-      console.error('Upload failed:', err);
-      setError(`Upload failed: ${err.message}`);
-      setUploadSuccess(false);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+    const result = await response.json();
+    console.log("Upload successful:", result);
+    setUploadSuccess(true);
+  } catch (err) {
+    setError(`Upload failed: ${err.message}`);
+  } finally {
+    setIsLoading(false);
+  }
+};
 
   return (
     <main className="min-h-screen w-full bg-linear-to-br from-sky-700 via-blue-700 to-emerald-600 flex items-center justify-center px-6">
