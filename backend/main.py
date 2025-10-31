@@ -8,6 +8,7 @@ from pydantic import BaseModel
 import math
 import json
 import glob
+from linear_regression import run_linear_regression
 from pandas.api.types import (
     is_bool_dtype,
     is_object_dtype,
@@ -18,6 +19,32 @@ from pandas.api.types import (
 from fastapi.middleware.cors import CORSMiddleware
 
 import uuid, shutil, re
+
+def run_id3_root(df, params):
+    """Placeholder for ID3 algorithm"""
+    return {
+        "steps": [
+            {
+                "step_number": 1,
+                "title": "ID3 Decision Tree",
+                "description": "ID3 algorithm implementation coming soon...",
+                "formula": "Information Gain = Entropy(parent) - Weighted Average * Entropy(children)"
+            }
+        ]
+    }
+
+def run_naive_bayes(df, params):
+    """Placeholder for Naive Bayes algorithm"""
+    return {
+        "steps": [
+            {
+                "step_number": 1,
+                "title": "Naive Bayes Classification",
+                "description": "Naive Bayes algorithm implementation coming soon...",
+                "formula": "P(class|features) = P(features|class) * P(class) / P(features)"
+            }
+        ]
+    }
 
 app = FastAPI(title="CSV Upload + Inline Target Analysis")
 origins = [
@@ -233,6 +260,8 @@ async def calculate(req: CalcRequest):
         result = run_id3_root(df, params)
     elif req.algorithm == "naive_bayes":
         result = run_naive_bayes(df, params)
+    elif req.algorithm == "linear_regression":
+        result = run_linear_regression(df, params)
     else:
         raise HTTPException(status_code=400, detail="Unsupported algorithm")
 

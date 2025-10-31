@@ -12,6 +12,7 @@ function Home() {
   const [suggestedAlgorithms, setSuggestedAlgorithms] = useState([]);
   const [datasetId, setDatasetId] = useState("");
 
+  // ✅ Handle file selection
   const handlePick = (e) => {
     setError("");
     setUploadSuccess(false);
@@ -28,11 +29,13 @@ function Home() {
     setFileName(f.name);
   };
 
+  // ✅ Upload dataset to backend
   const uploadToBackend = async () => {
     if (!fileRef.current?.files?.[0]) {
       setError("Please select a file first.");
       return;
     }
+
     const file = fileRef.current.files[0];
     const formData = new FormData();
     formData.append("file", file);
@@ -50,6 +53,7 @@ function Home() {
         method: "POST",
         body: formData,
       });
+
       if (!response.ok) {
         const txt = await response.text();
         throw new Error(`${response.status} ${txt}`);
@@ -61,21 +65,18 @@ function Home() {
       setDatasetId(result.dataset_id);
       localStorage.setItem("datasetid", result.dataset_id);
 
-      // Store suggested algorithms
+      // ✅ Store algorithms from backend
       if (result.suggested_algorithms) {
         setSuggestedAlgorithms(result.suggested_algorithms);
       }
 
-      // Determine problem type
-      if (
-        result.suggested_algorithms &&
-        result.suggested_algorithms.length > 0
-      ) {
+      // ✅ Detect problem type
+      if (result.suggested_algorithms?.length > 0) {
         const firstAlgo = result.suggested_algorithms[0].toLowerCase();
-        if (firstAlgo !== "id3") {
-          setProblemType("This is a regression problem.");
-        } else {
+        if (firstAlgo === "id3" || firstAlgo === "naive_bayes") {
           setProblemType("This is a classification problem.");
+        } else {
+          setProblemType("This is a regression problem.");
         }
       }
     } catch (err) {
@@ -85,42 +86,23 @@ function Home() {
     }
   };
 
-  const handleAlgorithmSelect = async (algo) => {
-    try {
-      const res = await fetch("http://localhost:8000/calculation", {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({
-    dataset_id: datasetId,           
-    algorithm: algo,                 
-    params: algo === "id3"
-      ? {
-          target: "Play",           
-          features: ["Outlook","Temp","Humidity","Wind"]
-        }
-      : algo === "naive_bayes"
-      ? {
-          target: "Play",
-          example: { Outlook: "Sunny", Temp: "Cool", Humidity: "High", Wind: true }
-        }
-      : {}
-  }),
-});
-
-
-      if (!res.ok) {
-        throw new Error("Failed to send algorithm selection to backend");
-      }
-
-      console.log(`Algorithm ${algo} sent to backend successfully`);
-      navigate(`/algorithms/${algo}`);
-    } catch (error) {
-      setError(error.message);
+  // ✅ Handle algorithm click
+  const handleAlgorithmSelect = (algo) => {
+    localStorage.setItem("selectedAlgorithm", algo.toLowerCase());
+    if (algo.toLowerCase() === "naive_bayes") {
+      navigate("/naiveBayes");
+    } else if (
+      algo.toLowerCase() === "linear_regression" ||
+      algo.toLowerCase() === "simple_linear_regression"
+    ) {
+      navigate("/simpleLinearRegression");
+    } else {
+      alert(`No page setup for ${algo}`);
     }
   };
 
   return (
-    <main className="min-h-screen w-full bg-linear-to-br from-sky-700 via-blue-700 to-emerald-600 flex items-center justify-center px-6">
+    <main className="min-h-screen w-full bg-gradient-to-br from-sky-700 via-blue-700 to-emerald-600 flex items-center justify-center px-6">
       <div className="text-center">
         <h1 className="text-white text-5xl md:text-7xl font-extrabold tracking-tight drop-shadow-[0_6px_20px_rgba(0,0,0,0.45)]">
           Σ ML-Tracer
@@ -129,7 +111,9 @@ function Home() {
         <p className="mt-4 text-white/85">
           Upload a CSV dataset to get started
         </p>
-<div className="mt-8 space-y-4">
+
+        {/* Upload Section */}
+        <div className="mt-8 space-y-4">
           <div>
             <button
               type="button"
@@ -174,7 +158,7 @@ function Home() {
           </p>
         )}
 
-        {/* ✅ Problem Type */}
+        {/* Problem Type */}
         {problemType && (
           <div
             className={`mt-4 mx-auto w-fit px-6 py-3 rounded-full shadow-lg text-white font-medium ${
@@ -187,7 +171,7 @@ function Home() {
           </div>
         )}
 
-        {/* ✅ Suggested Algorithms List */}
+        {/* Suggested Algorithms */}
         {suggestedAlgorithms.length > 0 && (
           <div className="mt-6">
             <h3 className="text-lg font-semibold text-white/90 mb-3">

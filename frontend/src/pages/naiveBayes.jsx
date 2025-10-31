@@ -1,56 +1,76 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { BlockMath, InlineMath } from "react-katex";
 import "katex/dist/katex.min.css";
 
-const NaiveBayesSteps = () => {
-  // Example dataset: Weather + Play (Yes/No)
-  const data = [
-    { outlook: "Sunny", temperature: "Hot", humidity: "High", windy: false, play: "No" },
-    { outlook: "Sunny", temperature: "Hot", humidity: "High", windy: true, play: "No" },
-    { outlook: "Overcast", temperature: "Hot", humidity: "High", windy: false, play: "Yes" },
-    { outlook: "Rainy", temperature: "Mild", humidity: "High", windy: false, play: "Yes" },
-    { outlook: "Rainy", temperature: "Cool", humidity: "Normal", windy: false, play: "Yes" },
-    { outlook: "Rainy", temperature: "Cool", humidity: "Normal", windy: true, play: "No" },
-    { outlook: "Overcast", temperature: "Cool", humidity: "Normal", windy: true, play: "Yes" },
-  ];
+const NaiveBayes = () => {
+  const [dataset, setDataset] = useState(null);
+  const [calculations, setCalculations] = useState(null);
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(true);
 
-  // Suppose we want to predict: Outlook = Sunny, Temperature = Cool, Humidity = High, Windy = true
+  useEffect(() => {
+    const fetchCalculation = async () => {
+      try {
+        const dataset_id = localStorage.getItem("datasetid");
+        const algo = "naive_bayes"; // fixed for this page
 
-  const total = data.length;
-  const yes = data.filter((d) => d.play === "Yes").length;
-  const no = total - yes;
+        if (!dataset_id) {
+          setError("Dataset ID not found. Please upload a dataset first.");
+          setLoading(false);
+          return;
+        }
 
-  const pYes = yes / total;
-  const pNo = no / total;
+        // ✅ POST to /calculation to perform Naive Bayes and get full results
+        const response = await fetch("http://localhost:8000/calculation", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            dataset_id: dataset_id,
+            algorithm: algo,
+            params: {
+              target: "Play",
+              example: {
+                Outlook: "Sunny",
+                Temp: "Cool",
+                Humidity: "High",
+                Wind: true,
+              },
+            },
+          }),
+        });
 
-  // Likelihoods P(feature|class)
-  const pOutlookSunnyYes =
-    data.filter((d) => d.outlook === "Sunny" && d.play === "Yes").length / yes || 0;
-  const pOutlookSunnyNo =
-    data.filter((d) => d.outlook === "Sunny" && d.play === "No").length / no || 0;
+        if (!response.ok) throw new Error("Failed to fetch calculations");
 
-  const pTempCoolYes =
-    data.filter((d) => d.temperature === "Cool" && d.play === "Yes").length / yes || 0;
-  const pTempCoolNo =
-    data.filter((d) => d.temperature === "Cool" && d.play === "No").length / no || 0;
+        const data = await response.json();
 
-  const pHumidityHighYes =
-    data.filter((d) => d.humidity === "High" && d.play === "Yes").length / yes || 0;
-  const pHumidityHighNo =
-    data.filter((d) => d.humidity === "High" && d.play === "No").length / no || 0;
+        // Example backend response:
+        // {
+        //   dataset: [...],
+        //   steps: { priors: {...}, likelihoods: {...}, posteriors: {...}, predicted: "Yes" }
+        // }
 
-  const pWindyTrueYes =
-    data.filter((d) => d.windy === true && d.play === "Yes").length / yes || 0;
-  const pWindyTrueNo =
-    data.filter((d) => d.windy === true && d.play === "No").length / no || 0;
+        setDataset(data.dataset || []);
+        setCalculations(data.steps);
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  // Posterior probabilities (proportional)
-  const pXGivenYes =
-    pOutlookSunnyYes * pTempCoolYes * pHumidityHighYes * pWindyTrueYes * pYes;
-  const pXGivenNo =
-    pOutlookSunnyNo * pTempCoolNo * pHumidityHighNo * pWindyTrueNo * pNo;
+    fetchCalculation();
+  }, []);
 
-  const predicted = pXGivenYes > pXGivenNo ? "Yes" : "No";
+  // 🌀 Loading and Error UI
+  if (loading)
+    return <div className="text-white text-center mt-20">Loading Naive Bayes...</div>;
+  if (error)
+    return <div className="text-red-400 text-center mt-20">{error}</div>;
+
+  if (!calculations)
+    return <div className="text-white text-center mt-20">No calculation results available.</div>;
+
+  const { priors, likelihoods, posteriors, predicted } = calculations;
 
   return (
     <div className="min-h-screen bg-gray-900 text-white flex flex-col items-center py-10 px-4 space-y-8">
@@ -58,87 +78,56 @@ const NaiveBayesSteps = () => {
         Naïve Bayes Algorithm – Step-by-Step
       </h1>
 
-      {/* Step 1: Prior probabilities */}
+      {/* ✅ Step 1: Prior Probabilities */}
       <div className="bg-gray-800 p-6 rounded-2xl shadow-lg w-full md:w-3/4">
         <h2 className="text-xl text-green-400 font-semibold mb-3">
-          Step 1: Calculate Prior Probabilities
+          Step 1: Prior Probabilities
         </h2>
-        <BlockMath math={"P(\\text{Yes}) = \\frac{\\text{Yes Count}}{\\text{Total}}"} />
-        <BlockMath math={"P(\\text{No}) = \\frac{\\text{No Count}}{\\text{Total}}"} />
-        <p className="mt-2">
-          <InlineMath
-            math={`P(\\text{Yes}) = ${yes}/${total} = ${pYes.toFixed(2)}, \\quad P(\\text{No}) = ${no}/${total} = ${pNo.toFixed(2)}`}
-          />
-        </p>
+        {priors &&
+          Object.keys(priors).map((cls) => (
+            <p key={cls}>
+              <InlineMath math={`P(${cls}) = ${priors[cls].toFixed(2)}`} />
+            </p>
+          ))}
       </div>
 
-      {/* Step 2: Conditional probabilities */}
+      {/* ✅ Step 2: Conditional Probabilities */}
       <div className="bg-gray-800 p-6 rounded-2xl shadow-lg w-full md:w-3/4">
         <h2 className="text-xl text-yellow-400 font-semibold mb-3">
-          Step 2: Compute Conditional Probabilities
+          Step 2: Conditional Probabilities
         </h2>
         <BlockMath math={"P(X|C_k) = \\prod_i P(x_i|C_k)"} />
-        <p className="mt-3">
-          <InlineMath math={`P(\\text{Outlook=Sunny|Yes}) = ${pOutlookSunnyYes.toFixed(2)}`} />
-          <br />
-          <InlineMath math={`P(\\text{Temperature=Cool|Yes}) = ${pTempCoolYes.toFixed(2)}`} />
-          <br />
-          <InlineMath math={`P(\\text{Humidity=High|Yes}) = ${pHumidityHighYes.toFixed(2)}`} />
-          <br />
-          <InlineMath math={`P(\\text{Windy=True|Yes}) = ${pWindyTrueYes.toFixed(2)}`} />
-        </p>
-        <hr className="my-3 border-gray-700" />
-        <p>
-          <InlineMath math={`P(\\text{Outlook=Sunny|No}) = ${pOutlookSunnyNo.toFixed(2)}`} />
-          <br />
-          <InlineMath math={`P(\\text{Temperature=Cool|No}) = ${pTempCoolNo.toFixed(2)}`} />
-          <br />
-          <InlineMath math={`P(\\text{Humidity=High|No}) = ${pHumidityHighNo.toFixed(2)}`} />
-          <br />
-          <InlineMath math={`P(\\text{Windy=True|No}) = ${pWindyTrueNo.toFixed(2)}`} />
-        </p>
+        {likelihoods &&
+          Object.entries(likelihoods).map(([cls, probs]) => (
+            <div key={cls} className="mt-3">
+              <h3 className="font-semibold text-blue-300">Class: {cls}</h3>
+              {Object.entries(probs).map(([feature, value]) => (
+                <p key={feature}>
+                  <InlineMath math={`P(${feature}|${cls}) = ${value.toFixed(2)}`} />
+                </p>
+              ))}
+            </div>
+          ))}
       </div>
 
-      {/* Step 3: Posterior Calculation */}
+      {/* ✅ Step 3: Posterior Probabilities */}
       <div className="bg-gray-800 p-6 rounded-2xl shadow-lg w-full md:w-3/4">
         <h2 className="text-xl text-pink-400 font-semibold mb-3">
-          Step 3: Compute Posterior Probabilities
+          Step 3: Posterior Probabilities
         </h2>
-        <BlockMath math={"P(C_k|X) \\propto P(C_k) \\prod_i P(x_i|C_k)"} />
-        <p className="mt-2">
-          <InlineMath
-            math={`P(X|\\text{Yes}) = (${pOutlookSunnyYes.toFixed(
-              2
-            )})(${pTempCoolYes.toFixed(2)})(${pHumidityHighYes.toFixed(
-              2
-            )})(${pWindyTrueYes.toFixed(2)})(${pYes.toFixed(2)}) = ${pXGivenYes.toExponential(
-              3
-            )}`}
-          />
-        </p>
-        <p className="mt-2">
-          <InlineMath
-            math={`P(X|\\text{No}) = (${pOutlookSunnyNo.toFixed(
-              2
-            )})(${pTempCoolNo.toFixed(2)})(${pHumidityHighNo.toFixed(
-              2
-            )})(${pWindyTrueNo.toFixed(2)})(${pNo.toFixed(2)}) = ${pXGivenNo.toExponential(
-              3
-            )}`}
-          />
-        </p>
+        {posteriors &&
+          Object.entries(posteriors).map(([cls, value]) => (
+            <p key={cls}>
+              <InlineMath math={`P(${cls}|X) \\propto ${value.toExponential(3)}`} />
+            </p>
+          ))}
       </div>
 
-      {/* Step 4: Classification */}
+      {/* ✅ Step 4: Final Prediction */}
       <div className="bg-gray-800 p-6 rounded-2xl shadow-lg w-full md:w-3/4 border border-blue-400">
         <h2 className="text-xl text-blue-400 font-semibold mb-3">
-          Step 4: Classify the Sample
+          Step 4: Classification
         </h2>
-        <p className="mb-2">
-          <InlineMath math={`P(X|\\text{Yes}) = ${pXGivenYes.toExponential(3)}`} />
-          <br />
-          <InlineMath math={`P(X|\\text{No}) = ${pXGivenNo.toExponential(3)}`} />
-        </p>
         <h3 className="text-lg mt-3">
           ✅ Predicted Class:{" "}
           <span className="text-green-400 font-bold">{predicted}</span>
@@ -148,4 +137,4 @@ const NaiveBayesSteps = () => {
   );
 };
 
-export default NaiveBayesSteps;
+export default NaiveBayes;
