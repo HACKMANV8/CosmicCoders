@@ -18,6 +18,7 @@ import os
 import glob
 from linear_regression import run_linear_regression
 from id3 import compute_id3_root_steps
+from knn_regression import run_knn_regression
 from pandas.api.types import (
     is_bool_dtype,
     is_object_dtype,
@@ -286,7 +287,7 @@ async def upload_and_analyze_dataset(
             resp["label_preview"] = label_peek(s)
             resp["suggested_algorithms"] = ["id3", "c4.5", "cart", "naive_bayes", "knn"]
         elif info["inferred"] == "regression":
-            resp["suggested_algorithms"] = ["cart_regression", "linear_regression"]
+            resp["suggested_algorithms"] = ["linear_regression", "knn_regression"]
         else:
             resp["suggested_algorithms"] = []
 
@@ -361,6 +362,38 @@ async def simple_linear_regression(req: LinearRegressionRequest = Body(...)):
         "metadata": result.get("metadata"),
     })
 
+
+
+class KNNRegressionRequest(BaseModel):
+    dataset_id: str
+    params: Optional[Dict[str, Any]] = None
+
+@app.post("/knnregression")
+async def knn_regression(req: KNNRegressionRequest = Body(...)):
+    csv_path = find_dataset_path(req.dataset_id)
+    try:
+        df = pd.read_csv(csv_path)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Failed to read dataset: {e}")
+
+    params = req.params or {}
+
+    result = run_knn_regression(df, params)
+
+    run_id = uuid.uuid4().hex
+    for i, s in enumerate(result["steps"], start=1):
+        s["run_id"] = run_id
+        s["step_id"] = i
+
+    return JSONResponse({
+        "run_id": run_id,
+        "algorithm": "knn_regression",
+        "dataset_id": req.dataset_id,
+        "steps": result["steps"],
+        "summary": result.get("summary"),
+        "chart_data": result.get("chart_data"),
+        "metadata": result.get("metadata"),
+    })
 
 
 @app.post("/naivebayes")

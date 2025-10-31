@@ -101,6 +101,9 @@ function Home() {
     ) {
       navigate("/simpleLinearRegression");
     } 
+    else if (algo.toLowerCase() === "knn_regression") {
+      navigate("/knnRegression");
+    }
     else if (
       algo.toLowerCase() === "id3" 
     ) {
