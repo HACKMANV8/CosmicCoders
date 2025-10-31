@@ -218,13 +218,18 @@ async def simple_linear_regression(req: LinearRegressionRequest = Body(...)):
     df = read_tabular_file(csv_path)
     result = run_linear_regression(df, req.params or {})
     run_id = uuid.uuid4().hex
+    
+    # Add run_id and step_id to each step
     for i, s in enumerate(result["steps"], start=1):
         s["run_id"] = run_id
         s["step_id"] = i
+    
     return {
         "run_id": run_id,
         "algorithm": "linear_regression",
         "steps": result["steps"],
+        "chart_data": result.get("chart_data", []),  # ← ADD THIS
+        "metadata": result.get("metadata", {}),       # ← ADD THIS
         "summary": result.get("summary"),
     }
 
