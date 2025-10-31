@@ -3,10 +3,15 @@ from fastapi import Body
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException
 from fastapi.responses import JSONResponse
 from pathlib import Path
-import pandas as pd
-from typing import Optional, Literal, Dict, Any, List
+from typing import Optional, Literal, Dict, Any, List, Mapping
 from pydantic import BaseModel
+from pathlib import Path
+import io
+
 import math
+import csv
+import pandas as pd
+from fastapi import HTTPException
 import json
 import glob
 from linear_regression import run_linear_regression
@@ -65,19 +70,22 @@ UPLOAD_DIR = Path("uploads")
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
 CSV_NAME_RE = re.compile(r".+\.csv$", re.IGNORECASE)
-CSV_MIME_OK = {"text/csv", "application/csv", "application/vnd.ms-excel"}  
+CSV_MIME_OK = {
+    "text/csv",
+    "application/csv",
+    "application/x-csv",
+    "text/plain",                   
+    "application/octet-stream",      
+    "application/vnd.ms-excel",
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+}
 
 def infer_target_type(
     s: pd.Series,
     max_class_count: int = 20,
     max_unique_ratio: float = 0.05,
 ):
-    """
-    Heuristic:
-      - object/category/bool -> classification
-      - numeric -> classification if few unique values or small unique ratio, else regression
-      - datetime -> flagged as unsupported target
-    """
+
     n = int(len(s))
     s_nonnull = s.dropna()
     nunique = int(s_nonnull.nunique())
@@ -142,6 +150,49 @@ def infer_target_type(
         "unique_ratio": float(nunique / max(1, s_nonnull.size)),
     }
 
+from typing import Any
+
+def _guess_encoding(raw: bytes) -> str:
+    try:
+        import chardet 
+    except Exception:
+        return "latin1"
+
+    det = chardet.detect(raw)  
+    enc: str | None = None
+    if isinstance(det, dict):
+        v = det.get("encoding")  
+        if isinstance(v, str) and v:
+            enc = v
+
+    return enc or "latin1"
+
+
+def read_tabular_file(path: Path) -> pd.DataFrame:
+    suf = path.suffix.lower()
+
+    if suf in {".xlsx", ".xls"}:
+        return pd.read_excel(path)
+    try:
+        head = path.read_bytes()[:4]
+        if head.startswith(b"PK\x03\x04"):  
+            return pd.read_excel(path)
+    except Exception:
+        pass
+
+    for enc in ("utf-8", "utf-8-sig", "cp1252", "latin1"):
+        try:
+            return pd.read_csv(path, encoding=enc, sep=None, engine="python")
+        except UnicodeDecodeError:
+            continue
+        except Exception:
+            continue
+
+    try:
+        text = path.read_text(encoding="latin1", errors="replace")
+        return pd.read_csv(io.StringIO(text), sep=None, engine="python")
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Failed to parse file as CSV/XLSX: {e}")
 
 def label_peek(s: pd.Series, top_k: int = 10):
     vc = s.astype("string").value_counts(dropna=True).head(top_k)
@@ -188,11 +239,12 @@ async def upload_and_analyze_dataset(
         await file.close()
 
     try:
-        df = pd.read_csv(save_path)
+        df = read_tabular_file(save_path)
+    except HTTPException:
+      raise
     except Exception as e:
-        try: save_path.unlink()
-        except: pass
-        raise HTTPException(status_code=400, detail=f"Failed to parse CSV: {e}")
+      raise HTTPException(status_code=400, detail=f"Failed to parse CSV: {e}")
+
 
     columns = df.columns.tolist()
     rows = int(len(df))
@@ -247,7 +299,7 @@ class CalcRequest(BaseModel):
 async def calculate(req: CalcRequest):
     csv_path = find_dataset_path(req.dataset_id)
     try:
-        df = pd.read_csv(csv_path)
+        df = read_tabular_file(csv_path)  
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Failed to read dataset: {e}")
 
