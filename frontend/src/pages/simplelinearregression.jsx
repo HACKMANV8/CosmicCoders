@@ -1,7 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState,useMemo } from "react";
 import { BlockMath, InlineMath } from "react-katex";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ScatterChart, Scatter, Cell } from 'recharts';
 import "katex/dist/katex.min.css";
+import { ComposedChart } from 'recharts';
 
 const LinearRegressionSteps = () => {
   const [steps, setSteps] = useState([]);
@@ -14,79 +15,102 @@ const LinearRegressionSteps = () => {
   const [metadata, setMetadata] = useState(null);
 
   useEffect(() => {
-    async function fetchCalculation() {
-      // Get dataset ID from localStorage (set in Home.jsx)
-      const datasetId = localStorage.getItem("datasetid");
-      
-      if (!datasetId) {
-        setError("No dataset ID found. Please upload a dataset first.");
-        setLoading(false);
-        return;
-      }
-
-      try {
-        const response = await fetch("http://localhost:8000/simplelinearregression", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            algorithm: "linear_regression",
-            dataset_id: datasetId,
-            params: {} // Let backend auto-detect columns
-          })
-        });
-
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        const result = await response.json();
-        console.log("Calculation result:", result);
-        
-        // Extract steps from the response
-        if (result.steps && result.steps.length > 0) {
-          setSteps(result.steps);
-          
-          // Set chart data
-          if (result.chart_data) {
-            setChartData(result.chart_data);
-          }
-          
-          // Set metadata
-          if (result.metadata) {
-            setMetadata(result.metadata);
-          }
-          
-          // Extract summary from the last step or create from steps
-          const lastStep = result.steps[result.steps.length - 1];
-          if (lastStep && lastStep.summary) {
-            setSummary(lastStep.summary);
-          } else {
-            // Create summary from individual steps
-            const slopeStep = result.steps.find(s => s.slope !== undefined);
-            const interceptStep = result.steps.find(s => s.intercept !== undefined);
-            const r2Step = result.steps.find(s => s.r2_score !== undefined);
-            
-            if (slopeStep && interceptStep) {
-              setSummary({
-                equation: `Salary = ${slopeStep.slope.toFixed(3)} × Years Experience + ${interceptStep.intercept.toFixed(3)}`,
-                slope: slopeStep.slope,
-                intercept: interceptStep.intercept,
-                r2_score: r2Step ? r2Step.r2_score : 0,
-                dataset_size: slopeStep.n || 0
-              });
-            }
-          }
-        }
-      } catch (err) {
-        console.error("Fetch error:", err);
-        setError(`Failed to fetch calculation: ${err.message}`);
-      } finally {
-        setLoading(false);
-      }
+  async function fetchCalculation() {
+    const datasetId = localStorage.getItem("datasetid");
+    
+    if (!datasetId) {
+      setError("No dataset ID found. Please upload a dataset first.");
+      setLoading(false);
+      return;
     }
 
-    fetchCalculation();
-  }, []);
+    try {
+      console.log("Fetching with dataset ID:", datasetId); // Debug log
+      
+      const response = await fetch("http://localhost:8000/simplelinearregression", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          algorithm: "linear_regression",
+          dataset_id: datasetId,
+          params: {}
+        })
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("Response error:", errorText);
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const result = await response.json();
+      console.log("Full API result:", result); // See entire response
+      console.log("Steps:", result.steps);
+      console.log("Chart data:", result.chart_data);
+      console.log("Metadata:", result.metadata);
+      
+      // Set steps
+      if (result.steps && result.steps.length > 0) {
+        setSteps(result.steps);
+        console.log("✓ Steps set:", result.steps.length);
+      } else {
+        console.warn("No steps in response");
+      }
+      
+      // Set chart data - CHECK ALL POSSIBLE LOCATIONS
+      if (result.chart_data && Array.isArray(result.chart_data)) {
+        console.log("✓ Setting chart data:", result.chart_data.length, "points");
+        setChartData(result.chart_data);
+      } else if (result.chartData && Array.isArray(result.chartData)) {
+        // Try alternate key name
+        console.log("✓ Setting chart data from chartData key:", result.chartData.length);
+        setChartData(result.chartData);
+      } else {
+        console.warn("⚠ No chart_data found in response");
+      }
+      
+      // Set metadata
+      if (result.metadata) {
+        console.log("✓ Metadata set:", result.metadata);
+        setMetadata(result.metadata);
+      } else {
+        console.warn("⚠ No metadata in response");
+      }
+      
+      // Extract summary
+      const lastStep = result.steps?.[result.steps.length - 1];
+      if (lastStep && lastStep.summary) {
+        setSummary(lastStep.summary);
+        console.log("✓ Summary set from last step");
+      } else {
+        // Create summary from individual steps
+        const slopeStep = result.steps?.find(s => s.slope !== undefined);
+        const interceptStep = result.steps?.find(s => s.intercept !== undefined);
+        const r2Step = result.steps?.find(s => s.r2_score !== undefined);
+        
+        if (slopeStep && interceptStep) {
+          const summaryData = {
+            equation: `Salary = ${slopeStep.slope.toFixed(3)} × Years Experience + ${interceptStep.intercept.toFixed(3)}`,
+            slope: slopeStep.slope,
+            intercept: interceptStep.intercept,
+            r2_score: r2Step ? r2Step.r2_score : 0,
+            dataset_size: slopeStep.n || 0
+          };
+          setSummary(summaryData);
+          console.log("✓ Summary created from steps:", summaryData);
+        }
+      }
+      
+    } catch (err) {
+      console.error("Fetch error:", err);
+      setError(`Failed to fetch calculation: ${err.message}`);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  fetchCalculation();
+}, []);
 
   // Handle keyboard navigation
   useEffect(() => {
@@ -150,115 +174,98 @@ const LinearRegressionSteps = () => {
     }
     return null;
   };
+ // Render interactive chart
+  // Replace the RegressionChart function with this:
+const RegressionChart = ({ isInStep = false }) => {
+  if (!chartData.length || !metadata) {
+    console.log("Chart not rendering - chartData:", chartData, "metadata:", metadata);
+    return null;
+  }
 
-  // Render interactive chart
-  const RegressionChart = ({ isInStep = false }) => {
-    if (!chartData.length || !metadata) {
-      return null;
-    }
+  console.log("Rendering chart with data:", chartData); // Debug log
 
-    const containerClass = isInStep 
-      ? "bg-linear-to-br from-white/5 to-white/10 backdrop-blur-md rounded-xl p-2 border border-white/20 shadow-2xl h-full"
-      : "bg-linear-to-br from-white/10 to-white/5 backdrop-blur-sm rounded-2xl p-6 mb-6 shadow-xl ring-1 ring-white/20";
+  const containerClass = isInStep
+    ? "bg-linear-to-br from-white/5 to-white/10 backdrop-blur-md rounded-xl p-2 border border-white/20 shadow-2xl h-full"
+    : "bg-linear-to-br from-white/10 to-white/5 backdrop-blur-sm rounded-2xl p-6 mb-6 shadow-xl ring-1 ring-white/20";
 
-    return (
-      <div className={containerClass}>
-        {!isInStep && (
-          <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-            <span className="text-2xl">📈</span>
-            Interactive Regression Chart
-          </h2>
-        )}
-        <div className="bg-white rounded-xl p-2 border border-gray-200 shadow-inner h-full">
-          <ResponsiveContainer width="100%" height={isInStep ? 400 : 400}>
-            <ScatterChart data={chartData}>
-              <CartesianGrid 
-                strokeDasharray="3 3" 
-                stroke="rgba(100,116,139,0.3)" 
-                strokeWidth={1}
-              />
-              <XAxis 
-                dataKey="x" 
-                type="number" 
-                domain={['dataMin - 0.5', 'dataMax + 0.5']}
-                tick={{ fill: '#374151', fontSize: 11, fontWeight: 500 }}
-                axisLine={{ stroke: 'rgba(100,116,139,0.4)', strokeWidth: 1 }}
-                tickLine={{ stroke: 'rgba(100,116,139,0.4)', strokeWidth: 1 }}
-                label={{ 
-                  value: metadata.feature_column, 
-                  position: 'insideBottom', 
-                  offset: -8,
-                  style: { 
-                    textAnchor: 'middle', 
-                    fill: '#374151', 
-                    fontWeight: 600,
-                    fontSize: 12
-                  }
-                }}
-              />
-              <YAxis 
-                tick={{ fill: '#374151', fontSize: 11, fontWeight: 500 }}
-                axisLine={{ stroke: 'rgba(100,116,139,0.4)', strokeWidth: 1 }}
-                tickLine={{ stroke: 'rgba(100,116,139,0.4)', strokeWidth: 1 }}
-                label={{ 
-                  value: metadata.target_column, 
-                  angle: -90, 
-                  position: 'insideLeft',
-                  style: { 
-                    textAnchor: 'middle', 
-                    fill: '#374151',
-                    fontWeight: 600,
-                    fontSize: 12
-                  }
-                }}
-              />
-              <Tooltip content={<CustomTooltip />} />
-              
-              {/* Actual data points with glow effect */}
-              <Scatter 
-                name="Actual Data" 
-                dataKey="y_actual" 
-                fill="#60a5fa"
-                stroke="#3b82f6"
-                strokeWidth={2}
-                r={6}
-              />
-              
-              {/* Predicted values - regression line */}
-              <Scatter 
-                name="Regression Line" 
-                dataKey="y_predicted" 
-                fill="#34d399"
-                stroke="#10b981"
-                strokeWidth={2}
-                r={3}
-                shape="diamond"
-              />
-            </ScatterChart>
-          </ResponsiveContainer>
-        </div>
-        
-        <div className="mt-3 text-center">
-          <div className="flex justify-center items-center gap-6 text-xs text-white/90 font-medium">
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 bg-blue-400 rounded-full shadow-lg border border-blue-300"></div>
-              <span>Actual Data</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 bg-green-400 transform rotate-45 shadow-lg border border-green-300"></div>
-              <span>Predicted</span>
-            </div>
+  return (
+    <div className={containerClass}>
+      {!isInStep && (
+        <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+          <span className="text-2xl">📈</span>
+          Interactive Regression Chart
+        </h2>
+      )}
+      <div className="bg-white rounded-xl p-2 border border-gray-200 shadow-inner h-full">
+        <ResponsiveContainer width="100%" height={isInStep ? 400 : 400}>
+          <ComposedChart data={chartData} margin={{ top: 5, right: 20, bottom: 20, left: 20 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke="rgba(100,116,139,0.3)" />
+            <XAxis
+              dataKey="x"
+              type="number"
+              domain={['dataMin - 0.5', 'dataMax + 0.5']}
+              tick={{ fill: '#374151', fontSize: 11, fontWeight: 500 }}
+              axisLine={{ stroke: 'rgba(100,116,139,0.4)' }}
+              tickLine={{ stroke: 'rgba(100,116,139,0.4)' }}
+              label={{
+                value: metadata?.feature_column ?? 'X',
+                position: 'insideBottom',
+                offset: -8,
+                style: { textAnchor: 'middle', fill: '#374151', fontWeight: 600, fontSize: 12 }
+              }}
+            />
+            <YAxis
+              type="number"
+              domain={['auto', 'auto']}
+              tick={{ fill: '#374151', fontSize: 11, fontWeight: 500 }}
+              axisLine={{ stroke: 'rgba(100,116,139,0.4)' }}
+              tickLine={{ stroke: 'rgba(100,116,139,0.4)' }}
+              label={{
+                value: metadata?.target_column ?? 'Y',
+                angle: -90,
+                position: 'insideLeft',
+                style: { textAnchor: 'middle', fill: '#374151', fontWeight: 600, fontSize: 12 }
+              }}
+            />
+            <Tooltip content={<CustomTooltip />} />
+
+            {/* Regression line first (so it appears behind points) */}
+            <Line 
+              type="monotone" 
+              dataKey="y_predicted" 
+              stroke="#10b981" 
+              strokeWidth={2} 
+              dot={false} 
+              name="Regression Line" 
+            />
+
+            {/* Actual points on top */}
+            <Scatter 
+              name="Actual Data" 
+              dataKey="y_actual"
+              fill="#60a5fa" 
+              stroke="#3b82f6" 
+              strokeWidth={1.5}
+            />
+          </ComposedChart>
+        </ResponsiveContainer>
+      </div>
+
+      <div className="mt-3 text-center">
+        <div className="flex justify-center items-center gap-6 text-xs text-white/90 font-medium">
+          <div className="flex items-center gap-2">
+            <div className="w-3 h-3 bg-blue-400 rounded-full shadow-lg border border-blue-300"></div>
+            <span>Actual Data</span>
           </div>
-          {!isInStep && (
-            <p className="text-white/70 text-xs mt-2">
-              Hover over points to see actual vs predicted values and prediction error
-            </p>
-          )}
+          <div className="flex items-center gap-2">
+            <div className="w-4 h-0.5 bg-emerald-500"></div>
+            <span>Regression Line</span>
+          </div>
         </div>
       </div>
-    );
-  };
-
+    </div>
+  );
+};
   // Helper function to render step content
   const renderStepContent = (step, idx) => {
     return (
