@@ -54,6 +54,7 @@ function Home() {
     "Support Vector Regression",
     "KNN Regression",
     "Simple Linear Regression",
+    "knn_classification"
   ];
 
   useEffect(() => {
@@ -165,6 +166,9 @@ function Home() {
       case "knn_regression":
         navigate("/knnRegression");
         break;
+            case "knn_classification":
+      navigate("/knnClassification");
+      break;
       case "support_vector_regression":
       case "svr":
         navigate("/svr");

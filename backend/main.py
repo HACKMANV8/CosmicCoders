@@ -201,21 +201,77 @@ def _evaluate_regression(df: pd.DataFrame, target: str):
     best = max(results, key=lambda r: r["metrics"]["r2"])
     return results, best["algorithm"]
 
-def infer_target_type(s: pd.Series, max_class_count: int = 20, max_unique_ratio: float = 0.05):
+def infer_target_type(
+    s: pd.Series,
+    max_class_count: int = 10,       # stricter: was 20
+    max_unique_ratio: float = 0.10,  # looser: was 0.05
+):
+    """
+    Heuristic:
+    - If dtype is object/categorical/bool  -> classification
+    - If numeric:
+        -> classification only if VERY few unique values or tiny ratio
+        -> otherwise regression
+    - If numeric coercion fails (too many NaNs) -> try to clean; if still messy, default regression only if high unique-ness.
+    Returns both the label and the stats that led to it.
+    """
     n = len(s)
     s_nonnull = s.dropna()
     nunique = s_nonnull.nunique()
+
+    # Datetime not supported as target here
     if is_datetime64_any_dtype(s_nonnull):
-        return {"inferred": "unsupported_datetime_target"}
+        return {"inferred": "unsupported_datetime_target", "reason": "datetime", "n": n, "nonnull": int(s_nonnull.size), "nunique": int(nunique)}
+
+    # If object/categorical/bool => classification
     if is_bool_dtype(s_nonnull) or isinstance(s_nonnull.dtype, CategoricalDtype) or is_object_dtype(s_nonnull):
-        return {"inferred": "classification"}
+        return {
+            "inferred": "classification",
+            "reason": "non-numeric dtype",
+            "n": n,
+            "nonnull": int(s_nonnull.size),
+            "nunique": int(nunique),
+            "unique_ratio": float(nunique / max(1, s_nonnull.size)),
+            "dtype": str(s_nonnull.dtype),
+        }
+
+    # Try numeric coercion (covers mixed ints/floats)
     coerced = pd.to_numeric(s_nonnull, errors="coerce")
-    if coerced.isna().mean() < 0.05:
-        if coerced.nunique() <= max_class_count or (coerced.nunique() / len(coerced)) <= max_unique_ratio:
-            return {"inferred": "classification"}
-        else:
-            return {"inferred": "regression"}
-    return {"inferred": "classification"}
+    na_rate = float(coerced.isna().mean())
+    nunique_num = int(coerced.dropna().nunique())
+    uniq_ratio = float(nunique_num / max(1, coerced.dropna().size))
+
+    # If coercion produced lots of NaNs, it's messy; but if unique looks high, lean regression.
+    if na_rate > 0.05:
+        inferred = "regression" if (nunique_num > max_class_count and uniq_ratio > max_unique_ratio) else "classification"
+        return {
+            "inferred": inferred,
+            "reason": f"numeric coercion produced {na_rate:.2%} NaNs",
+            "n": n,
+            "nonnull": int(s_nonnull.size),
+            "nunique": int(nunique_num),
+            "unique_ratio": uniq_ratio,
+            "na_rate_after_coercion": na_rate,
+        }
+
+    # Clean numeric case
+    if nunique_num <= max_class_count or uniq_ratio <= max_unique_ratio:
+        inferred = "classification"
+        reason = f"numeric but low uniqueness (<= {max_class_count} uniques or <= {max_unique_ratio:.0%} ratio)"
+    else:
+        inferred = "regression"
+        reason = "numeric with sufficient uniqueness"
+
+    return {
+        "inferred": inferred,
+        "reason": reason,
+        "n": n,
+        "nonnull": int(coerced.dropna().size),
+        "nunique": int(nunique_num),
+        "unique_ratio": uniq_ratio,
+        "dtype": "numeric",
+    }
+
 
 def label_peek(s: pd.Series, top_k: int = 10):
     vc = s.astype("string").value_counts(dropna=True).head(top_k)
@@ -243,13 +299,17 @@ async def upload_and_analyze_dataset(
     df = read_tabular_file(save_path)
     
     # Auto-detect target column if not provided or not found
+    # after reading df
     if not target or target not in df.columns:
-        # Look for common target column names
-        possible_targets = ["value", "Salary", "Price", "Target", "Y", "y", "target"]
-        for col in possible_targets:
-            if col in df.columns:
-                target = col
-                break
+        numeric_cols = df.select_dtypes(include=['number']).columns.tolist()
+        if numeric_cols:
+            target = numeric_cols[-1]  # prefer last numeric
+        else:
+            for col in ["value","salary","price","target","y","Y","Target"]:
+                if col in df.columns:
+                    target = col
+                    break
+
         if not target:
             # Use last numeric column as target
             numeric_cols = df.select_dtypes(include=['number']).columns
